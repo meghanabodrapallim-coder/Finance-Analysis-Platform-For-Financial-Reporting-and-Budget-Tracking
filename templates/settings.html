@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - Settings</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .settings-section {
+            margin-bottom: 25px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .settings-section:last-child {
+            border-bottom: none;
+        }
+        .settings-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1a1a2e;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0;
+            right: 0; bottom: 0;
+            background-color: #ccc;
+            border-radius: 26px;
+            transition: 0.4s;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            border-radius: 50%;
+            transition: 0.4s;
+        }
+        input:checked + .toggle-slider {
+            background-color: #4CAF50;
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .setting-label {
+            font-size: 14px;
+            color: #555;
+        }
+        .setting-desc {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 2px;
+        }
+        .theme-option {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 2px solid #ddd;
+            cursor: pointer;
+            font-size: 13px;
+            margin-right: 10px;
+            transition: all 0.2s;
+        }
+        .theme-option.selected {
+            border-color: #4CAF50;
+            background: #e8f5e9;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Loading Spinner -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">🏠 Dashboard</a>
+    <a href="/add_expense">💸 Expenses</a>
+    <a href="/budget">📋 Budget</a>
+    <a href="/investments">📈 Investments</a>
+    <a href="/goals">🎯 Goals</a>
+    <a href="/wallets">Wallets</a>
+    <a href="/bills">Bills & Calendar</a>
+    <a href="/subscriptions">Subscriptions</a>
+    <a href="/challenges">Challenges</a>
+    <a href="/spending_personality">Spending Personality</a>
+    <a href="/simulator">What-If Simulator</a>
+    <a href="/analytics">📊 Analytics</a>
+    <a href="/spending_analysis">🔍 Spending</a>
+    <a href="/budget_recommendations">💡 Reco</a>
+    <a href="/health_score">❤️ Health</a>
+    <a href="/notifications">🔔 Alerts</a>
+    <a href="/ai_insights">🧠 AI Insights</a>
+    <a href="/intelligence_dashboard">⚡ Intel</a>
+    <a href="/profile">👤 Profile</a>
+    <a href="/settings">⚙️ Settings</a>
+    <a href="/logout">🚪 Logout</a>
+</nav>
+
+<div class="container">
+    <p class="page-title">⚙️ Settings</p>
+    <p class="subtitle">
+        Customize your Smart Finance experience
+    </p>
+
+    {% if message %}
+    <div class="success-msg">✅ {{ message }}</div>
+    {% endif %}
+
+    <div class="two-col">
+
+        <!-- Settings Form -->
+        <div class="card">
+            <form method="POST" action="/settings">
+
+                <!-- Currency Settings -->
+                <div class="settings-section">
+                    <div class="settings-title">
+                        💰 Currency Preference
+                    </div>
+                    <label>Select Currency</label>
+                    <select name="currency">
+                        <option value="INR"
+                            {% if not settings or settings['currency'] == 'INR' %}
+                            selected{% endif %}>
+                            ₹ INR — Indian Rupee
+                        </option>
+                        <option value="USD"
+                            {% if settings and settings['currency'] == 'USD' %}
+                            selected{% endif %}>
+                            $ USD — US Dollar
+                        </option>
+                        <option value="EUR"
+                            {% if settings and settings['currency'] == 'EUR' %}
+                            selected{% endif %}>
+                            € EUR — Euro
+                        </option>
+                        <option value="GBP"
+                            {% if settings and settings['currency'] == 'GBP' %}
+                            selected{% endif %}>
+                            £ GBP — British Pound
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Default Income -->
+                <div class="settings-section">
+                    <div class="settings-title">
+                        📊 Default Monthly Income
+                    </div>
+                    <label>Set Default Income (₹)</label>
+                    <input type="number"
+                           name="default_income"
+                           placeholder="45000"
+                           value="{{ settings['default_income'] if settings else '' }}">
+                    <p style="color:#888; font-size:12px;">
+                        This will auto-fill when you set income
+                    </p>
+                </div>
+
+                <!-- Notifications -->
+                <div class="settings-section">
+                    <div class="settings-title">
+                        🔔 Notification Preferences
+                    </div>
+                    <div class="setting-row">
+                        <div>
+                            <div class="setting-label">
+                                Budget Alerts
+                            </div>
+                            <div class="setting-desc">
+                                Get alerts when budget is exceeded
+                            </div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox"
+                                   name="notification_pref"
+                                   value="on"
+                                   {% if not settings or settings['notification_pref'] == 'on' %}
+                                   checked{% endif %}>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Theme -->
+                <div class="settings-section">
+                    <div class="settings-title">
+                        🎨 Theme Preference
+                    </div>
+                    <div style="margin-top:10px;">
+                        <span class="theme-option
+                            {% if not settings or settings['theme'] == 'light' %}
+                            selected{% endif %}"
+                            onclick="selectTheme('light')">
+                            ☀️ Light Mode
+                        </span>
+                        <span class="theme-option
+                            {% if settings and settings['theme'] == 'dark' %}
+                            selected{% endif %}"
+                            onclick="selectTheme('dark')">
+                            🌙 Dark Mode
+                        </span>
+                        <input type="hidden"
+                               name="theme"
+                               id="themeInput"
+                               value="{{ settings['theme'] if settings else 'light' }}">
+                    </div>
+                </div>
+
+                <button class="btn-green" type="submit">
+                    💾 Save Settings
+                </button>
+            </form>
+        </div>
+
+        <!-- Settings Info Cards -->
+        <div>
+            <!-- Account Info -->
+            <div class="card">
+                <h3>👤 Account Information</h3>
+                <br>
+                <div class="setting-row">
+                    <div class="setting-label">Name</div>
+                    <div style="font-weight:bold;">
+                        {{ user['name'] }}
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <div class="setting-label">Email</div>
+                    <div style="font-weight:bold;">
+                        {{ user['email'] }}
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <div class="setting-label">Status</div>
+                    <div style="color:#4CAF50;
+                                font-weight:bold;">
+                        ✅ Active
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Settings -->
+            <div class="card" style="margin-top:20px;">
+                <h3>⚙️ Current Settings</h3>
+                <br>
+                <div class="setting-row">
+                    <div class="setting-label">Currency</div>
+                    <div style="font-weight:bold;">
+                        {{ settings['currency'] if settings else 'INR' }}
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <div class="setting-label">
+                        Default Income
+                    </div>
+                    <div style="font-weight:bold;">
+                        ₹{{ "{:,.0f}".format(settings['default_income']) if settings else '0' }}
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <div class="setting-label">
+                        Notifications
+                    </div>
+                    <div style="font-weight:bold;
+                                color:#4CAF50;">
+                        {{ settings['notification_pref'] | upper if settings else 'ON' }}
+                    </div>
+                </div>
+                <div class="setting-row">
+                    <div class="setting-label">Theme</div>
+                    <div style="font-weight:bold;">
+                        {{ settings['theme'] | capitalize if settings else 'Light' }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="card" style="margin-top:20px;">
+                <h3>🔗 Quick Links</h3>
+                <br>
+                <a href="/profile"
+                   style="display:block;
+                          padding:12px;
+                          background:#e3f2fd;
+                          border-radius:8px;
+                          text-decoration:none;
+                          text-align:center;
+                          color:#2196F3;
+                          font-weight:bold;
+                          margin-bottom:10px;">
+                    👤 View Profile
+                </a>
+                <a href="/dashboard"
+                   style="display:block;
+                          padding:12px;
+                          background:#e8f5e9;
+                          border-radius:8px;
+                          text-decoration:none;
+                          text-align:center;
+                          color:#4CAF50;
+                          font-weight:bold;
+                          margin-bottom:10px;">
+                    🏠 Go to Dashboard
+                </a>
+                <a href="/logout"
+                   style="display:block;
+                          padding:12px;
+                          background:#fce4ec;
+                          border-radius:8px;
+                          text-decoration:none;
+                          text-align:center;
+                          color:#f44336;
+                          font-weight:bold;">
+                    🚪 Logout
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dark Mode Toggle -->
+<button class="dark-toggle"
+        onclick="toggleDark()"
+        id="darkBtn">🌙</button>
+
+<script>
+// Loading Spinner
+window.addEventListener('load', function() {
+    document.getElementById('loading-overlay')
+        .style.display = 'none';
+});
+
+// Dark Mode
+function toggleDark() {
+    document.body.classList.toggle('dark-mode');
+    const btn = document.getElementById('darkBtn');
+    if (document.body.classList.contains('dark-mode')) {
+        btn.textContent = '☀️';
+        localStorage.setItem('darkMode', 'on');
+    } else {
+        btn.textContent = '🌙';
+        localStorage.setItem('darkMode', 'off');
+    }
+}
+
+if (localStorage.getItem('darkMode') === 'on') {
+    document.body.classList.add('dark-mode');
+    document.getElementById('darkBtn').textContent = '☀️';
+}
+
+// Theme Selection
+function selectTheme(theme) {
+    document.getElementById('themeInput').value = theme;
+    document.querySelectorAll('.theme-option')
+        .forEach(el => el.classList.remove('selected'));
+    event.target.classList.add('selected');
+    if (theme === 'dark') {
+        document.body.classList.add('dark-mode');
+        document.getElementById('darkBtn')
+            .textContent = '☀️';
+        localStorage.setItem('darkMode', 'on');
+    } else {
+        document.body.classList.remove('dark-mode');
+        document.getElementById('darkBtn')
+            .textContent = '🌙';
+        localStorage.setItem('darkMode', 'off');
+    }
+}
+</script>
+
+</body>
+</html>

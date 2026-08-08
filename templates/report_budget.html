@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Budget Utilization Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        @media print { nav, .no-print { display: none !important; } }
+    </style>
+</head>
+<body>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/reports">Reports</a>
+    <div class="nav-profile">
+        <div class="profile-avatar">{{ session['user_name'][0] | upper }}</div>
+        <div class="profile-info">
+            <span class="profile-name">{{ session['user_name'] }}</span>
+            <a href="/logout" class="profile-logout">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <p class="page-title">Budget Utilization Report</p>
+    <p class="subtitle">Generated on {{ generated_on }} for {{ session['user_name'] }}</p>
+
+    <button class="btn-blue no-print" style="width:auto; padding:10px 20px; margin-bottom:15px;" onclick="window.print()">🖨️ Print Report</button>
+
+    <div class="stats-grid">
+        <div class="stat-card orange">
+            <h3>Total Budgeted</h3>
+            <p>₹{{ "{:,.2f}".format(total_budget) }}</p>
+        </div>
+        <div class="stat-card red">
+            <h3>Total Spent</h3>
+            <p>₹{{ "{:,.2f}".format(total_spent) }}</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Category Details</h3>
+        {% if report_data %}
+        <table>
+            <tr><th>Category</th><th>Month</th><th>Budget</th><th>Spent</th><th>Remaining</th><th>Used %</th><th>Status</th></tr>
+            {% for r in report_data %}
+            <tr>
+                <td>{{ r.category }}</td>
+                <td>{{ r.month }}</td>
+                <td>₹{{ "{:,.2f}".format(r.budget) }}</td>
+                <td>₹{{ "{:,.2f}".format(r.spent) }}</td>
+                <td style="color:{% if r.remaining < 0 %}#f44336{% else %}#4CAF50{% endif %};">₹{{ "{:,.2f}".format(r.remaining) }}</td>
+                <td>{{ r.percentage }}%</td>
+                <td>
+                    {% if r.status == 'Over Budget' %}
+                    <span style="color:#f44336; font-weight:bold;">❌ Over Budget</span>
+                    {% else %}
+                    <span style="color:#4CAF50; font-weight:bold;">✅ On Track</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p style="color:#888;">No budgets set yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+</body>
+</html>

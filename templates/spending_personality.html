@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - Spending Personality</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .personality-hero {
+            text-align: center;
+            padding: 40px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .personality-hero.green { background: linear-gradient(135deg, #4CAF50, #81C784); color: white; }
+        .personality-hero.orange { background: linear-gradient(135deg, #FF9800, #FFB74D); color: white; }
+        .personality-hero.red { background: linear-gradient(135deg, #f44336, #e57373); color: white; }
+        .personality-emoji { font-size: 60px; }
+        .personality-name { font-size: 32px; font-weight: bold; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/add_expense">Expenses</a>
+    <a href="/budget">Budget</a>
+    <a href="/investments">Investments</a>
+    <a href="/goals">Goals</a>
+    <a href="/wallets">Wallets</a>
+    <a href="/bills">Bills & Calendar</a>
+    <a href="/subscriptions">Subscriptions</a>
+    <a href="/challenges">Challenges</a>
+    <a href="/spending_personality">Spending Personality</a>
+    <a href="/simulator">What-If Simulator</a>
+    <a href="/analytics">Analytics</a>
+    <a href="/ai_analysis">AI Analysis</a>
+    <a href="/profile">Profile</a>
+    <a href="/settings">Settings</a>
+
+    <div class="nav-profile">
+        <div class="profile-avatar">{{ session['user_name'][0] | upper }}</div>
+        <div class="profile-info">
+            <span class="profile-name">{{ session['user_name'] }}</span>
+            <a href="/logout" class="profile-logout">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <p class="page-title">Your Spending Personality</p>
+    <p class="subtitle">Based on your savings rate, spending mix, and budget discipline</p>
+
+    <div class="personality-hero {{ color }}">
+        <div class="personality-emoji">{{ emoji }}</div>
+        <div class="personality-name">{{ personality }}</div>
+        <div>{{ description }}</div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <h3>Savings Rate</h3>
+            <p>{{ savings_rate }}%</p>
+            <span>of Income</span>
+        </div>
+        <div class="stat-card orange">
+            <h3>Discretionary Spend</h3>
+            <p>{{ discretionary_pct }}%</p>
+            <span>of Total Expenses</span>
+        </div>
+        <div class="stat-card red">
+            <h3>Over-Budget Categories</h3>
+            <p>{{ over_budget_pct }}%</p>
+            <span>of Budgets Set</span>
+        </div>
+    </div>
+
+    <div class="two-col">
+        <div class="card">
+            <h3>Why You Got This Result</h3>
+            <ul style="line-height:2; color:#555; padding-left:20px;">
+                {% for r in reasons %}
+                <li>{{ r }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>💡 Tips For You</h3>
+            <ul style="line-height:2; color:#555; padding-left:20px;">
+                {% for t in tips %}
+                <li>{{ t }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - Edit Wallet</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/add_expense">Expenses</a>
+    <a href="/budget">Budget</a>
+    <a href="/investments">Investments</a>
+    <a href="/goals">Goals</a>
+    <a href="/wallets">Wallets</a>
+    <a href="/bills">Bills & Calendar</a>
+    <a href="/subscriptions">Subscriptions</a>
+    <a href="/challenges">Challenges</a>
+    <a href="/spending_personality">Spending Personality</a>
+    <a href="/simulator">What-If Simulator</a>
+    <a href="/analytics">Analytics</a>
+    <a href="/ai_analysis">AI Analysis</a>
+    <a href="/profile">Profile</a>
+    <a href="/settings">Settings</a>
+
+    <div class="nav-profile">
+        <div class="profile-avatar">{{ session['user_name'][0] | upper }}</div>
+        <div class="profile-info">
+            <span class="profile-name">{{ session['user_name'] }}</span>
+            <a href="/logout" class="profile-logout">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <p class="page-title">Edit Wallet</p>
+
+    <div class="card" style="max-width:500px;">
+        <form method="POST" action="/edit_wallet/{{ wallet.id }}">
+            <label>Wallet Name</label>
+            <input type="text" name="wallet_name" value="{{ wallet.wallet_name }}" required>
+
+            <label>Wallet Type</label>
+            <select name="wallet_type" required>
+                {% for t in ['Bank Account','Cash','Credit Card','UPI','Other'] %}
+                <option value="{{ t }}" {% if wallet.wallet_type == t %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Current Balance (₹)</label>
+            <input type="number" name="balance" value="{{ wallet.balance }}" required>
+
+            <button class="btn-green" type="submit">Update Wallet</button>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

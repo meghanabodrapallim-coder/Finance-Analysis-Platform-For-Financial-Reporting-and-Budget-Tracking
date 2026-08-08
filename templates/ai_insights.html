@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - AI Financial Insights</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .insight-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border-left: 4px solid #ddd;
+        }
+        .insight-success { background:#f0fff4; border-left-color:#4CAF50; }
+        .insight-info    { background:#f0f8ff; border-left-color:#2196F3; }
+        .insight-warning { background:#fffbf0; border-left-color:#FF9800; }
+        .insight-danger  { background:#fff5f5; border-left-color:#f44336; }
+
+        .insight-icon  { font-size:24px; min-width:35px; }
+        .insight-title {
+            font-weight: bold;
+            font-size: 14px;
+            color: #1a1a2e;
+            margin-bottom: 4px;
+        }
+        .insight-msg { font-size: 13px; color:#555; }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1a1a2e;
+            margin: 20px 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Spinner -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">🏠 Dashboard</a>
+    <a href="/add_expense">💸 Expenses</a>
+    <a href="/budget">📋 Budget</a>
+    <a href="/investments">📈 Investments</a>
+    <a href="/goals">🎯 Goals</a>
+    <a href="/wallets">Wallets</a>
+    <a href="/bills">Bills & Calendar</a>
+    <a href="/subscriptions">Subscriptions</a>
+    <a href="/challenges">Challenges</a>
+    <a href="/spending_personality">Spending Personality</a>
+    <a href="/simulator">What-If Simulator</a>
+    <a href="/analytics">📊 Analytics</a>
+    <a href="/spending_analysis">🔍 Spending</a>
+    <a href="/budget_recommendations">💡 Reco</a>
+    <a href="/health_score">❤️ Health</a>
+    <a href="/notifications">🔔 Alerts</a>
+    <a href="/ai_insights">🧠 AI Insights</a>
+    <a href="/intelligence_dashboard">⚡ Intel</a>
+    <a href="/logout">🚪 Logout</a>
+</nav>
+
+<div class="container">
+    <p class="page-title">🧠 AI Based Financial Insights</p>
+    <p class="subtitle">
+        Personalized financial suggestions based on your behavior
+    </p>
+
+    <!-- Summary Cards -->
+    <div class="stats-grid">
+        <div class="stat-card green">
+            <h3>Monthly Income</h3>
+            <p>₹{{ "{:,.2f}".format(monthly_income) }}</p>
+        </div>
+        <div class="stat-card red">
+            <h3>Total Expenses</h3>
+            <p>₹{{ "{:,.2f}".format(total_exp) }}</p>
+        </div>
+        <div class="stat-card blue">
+            <h3>Savings</h3>
+            <p>₹{{ "{:,.2f}".format(savings) }}</p>
+        </div>
+        <div class="stat-card orange">
+            <h3>Savings Rate</h3>
+            <p>{{ savings_ratio }}%</p>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="two-col">
+        <div class="card">
+            <h3>Monthly Spending Trend</h3>
+            <canvas id="trendChart"></canvas>
+        </div>
+        <div class="card">
+            <h3>Expense Distribution</h3>
+            <canvas id="distChart"></canvas>
+        </div>
+    </div>
+
+    <!-- AI Insights Sections -->
+    <div class="two-col">
+
+        <!-- Left Column -->
+        <div>
+            <!-- Spending Insights -->
+            <div class="card">
+                <div class="section-title">
+                    📊 Spending Insights
+                </div>
+                {% for insight in spending_insights %}
+                <div class="insight-card insight-{{ insight.type }}">
+                    <div class="insight-icon">{{ insight.icon }}</div>
+                    <div>
+                        <div class="insight-title">
+                            {{ insight.title }}
+                        </div>
+                        <div class="insight-msg">
+                            {{ insight.message }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Investment Insights -->
+            <div class="card">
+                <div class="section-title">
+                    📈 Investment Insights
+                </div>
+                {% for insight in investment_insights %}
+                <div class="insight-card insight-{{ insight.type }}">
+                    <div class="insight-icon">{{ insight.icon }}</div>
+                    <div>
+                        <div class="insight-title">
+                            {{ insight.title }}
+                        </div>
+                        <div class="insight-msg">
+                            {{ insight.message }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div>
+            <!-- Savings Insights -->
+            <div class="card">
+                <div class="section-title">
+                    💰 Savings Insights
+                </div>
+                {% for insight in saving_insights %}
+                <div class="insight-card insight-{{ insight.type }}">
+                    <div class="insight-icon">{{ insight.icon }}</div>
+                    <div>
+                        <div class="insight-title">
+                            {{ insight.title }}
+                        </div>
+                        <div class="insight-msg">
+                            {{ insight.message }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Goal Insights -->
+            <div class="card">
+                <div class="section-title">
+                    🎯 Goal Insights
+                </div>
+                {% for insight in goal_insights %}
+                <div class="insight-card insight-{{ insight.type }}">
+                    <div class="insight-icon">{{ insight.icon }}</div>
+                    <div>
+                        <div class="insight-title">
+                            {{ insight.title }}
+                        </div>
+                        <div class="insight-msg">
+                            {{ insight.message }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<script>
+    // Monthly Trend Chart
+    const trendCtx = document
+        .getElementById('trendChart').getContext('2d');
+    new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: {{ monthly_labels | tojson }},
+            datasets: [{
+                label: 'Monthly Expenses',
+                data: {{ monthly_amounts | tojson }},
+                borderColor: '#2196F3',
+                backgroundColor: 'rgba(33,150,243,0.1)',
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#2196F3',
+                pointRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    // Distribution Pie Chart
+    const distCtx = document
+        .getElementById('distChart').getContext('2d');
+    new Chart(distCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ cat_labels | tojson }},
+            datasets: [{
+                data: {{ cat_amounts | tojson }},
+                backgroundColor: [
+                    '#2196F3','#4CAF50','#FF9800',
+                    '#f44336','#9C27B0','#00BCD4','#FF5722'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'right' } }
+        }
+    });
+</script>
+<!-- Dark Mode Toggle -->
+<button class="dark-toggle" 
+        onclick="toggleDark()" 
+        id="darkBtn">🌙</button>
+<script>
+// Loading Spinner
+window.addEventListener('load', function() {
+    document.getElementById('loading-overlay')
+        .style.display = 'none';
+});
+
+// Dark Mode
+function toggleDark() {
+    document.body.classList.toggle('dark-mode');
+    const btn = document.getElementById('darkBtn');
+    if (document.body.classList.contains('dark-mode')) {
+        btn.textContent = '☀️';
+        localStorage.setItem('darkMode', 'on');
+    } else {
+        btn.textContent = '🌙';
+        localStorage.setItem('darkMode', 'off');
+    }
+}
+
+// Remember dark mode on reload
+if (localStorage.getItem('darkMode') === 'on') {
+    document.body.classList.add('dark-mode');
+    document.getElementById('darkBtn').textContent = '☀️';
+}
+
+// Animated Number Counters
+function animateCounter(element, target, prefix) {
+    let start = 0;
+    const duration = 1500;
+    const step = target / (duration / 16);
+    const timer = setInterval(function() {
+        start += step;
+        if (start >= target) {
+            start = target;
+            clearInterval(timer);
+        }
+        element.textContent = prefix +
+            Math.floor(start).toLocaleString('en-IN');
+    }, 16);
+}
+
+window.addEventListener('load', function() {
+    document.querySelectorAll('.stat-card p')
+        .forEach(function(el) {
+            const text = el.textContent.trim();
+            if (text.startsWith('₹')) {
+                const num = parseFloat(
+                    text.replace('₹','').replace(/,/g,'')
+                );
+                if (!isNaN(num)) {
+                    animateCounter(el, num, '₹');
+                }
+            } else if (text.endsWith('%')) {
+                const num = parseFloat(text.replace('%',''));
+                if (!isNaN(num)) {
+                    const timer = setInterval(function() {
+                        // handled separately
+                    }, 16);
+                }
+            }
+        });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - Goals</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .progress-bar-bg {
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            height: 12px;
+            width: 100%;
+            margin-top: 5px;
+        }
+        .progress-bar-fill {
+            height: 12px;
+            border-radius: 10px;
+            background-color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Spinner -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">🏠 Dashboard</a>
+    <a href="/add_expense">💸 Expenses</a>
+    <a href="/budget">📋 Budget</a>
+    <a href="/investments">📈 Investments</a>
+    <a href="/goals">🎯 Goals</a>
+    <a href="/analytics">📊 Analytics</a>
+    <a href="/spending_analysis">🔍 Spending</a>
+    <a href="/budget_recommendations">💡 Reco</a>
+    <a href="/health_score">❤️ Health</a>
+    <a href="/notifications">🔔 Alerts</a>
+    <a href="/ai_insights">🧠 AI Insights</a>
+    <a href="/intelligence_dashboard">⚡ Intel</a>
+    <a href="/logout">🚪 Logout</a>
+
+    <div class="nav-profile">
+        <div class="profile-avatar">{{ session['user_name'][0] | upper }}</div>
+        <div class="profile-info">
+            <span class="profile-name">{{ session['user_name'] }}</span>
+            <a href="/logout" class="profile-logout">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <p class="page-title">Financial Goal Planning</p>
+    <p class="subtitle">Set targets and track your savings progress</p>
+
+    {% if message %}
+    <div class="success-msg">✅ {{ message }}</div>
+    {% endif %}
+
+    <div class="ai-suggestion-box">
+        💡 <b>AI Insight:</b> Based on your income and expenses, you have
+        ₹{{ "{:,.2f}".format(available_to_save) }} available to save this month.
+        Suggested amounts are shown per goal below.
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <h3>Total Goals</h3>
+            <p>{{ total_goals }}</p>
+            <span>Goals Created</span>
+        </div>
+        <div class="stat-card green">
+            <h3>Completed Goals</h3>
+            <p>{{ completed }}</p>
+            <span>Goals Achieved</span>
+        </div>
+        <div class="stat-card orange">
+            <h3>In Progress</h3>
+            <p>{{ total_goals - completed }}</p>
+            <span>Goals Remaining</span>
+        </div>
+        <div class="stat-card red">
+            <h3>Completion Rate</h3>
+            <p>
+                {% if total_goals > 0 %}
+                {{ ((completed / total_goals) * 100) | round(1) }}%
+                {% else %}0%{% endif %}
+            </p>
+            <span>Overall Progress</span>
+        </div>
+    </div>
+
+    <div class="two-col">
+        <!-- Add Goal Form -->
+        <div class="card">
+            <h3>Add New Goal</h3>
+            <form method="POST" action="/goals">
+                <label>Goal Name</label>
+                <select name="goal_name" required>
+                    <option value="">Select Goal</option>
+                    <option>Emergency Fund</option>
+                    <option>Vacation Savings</option>
+                    <option>Education Fund</option>
+                    <option>Home Purchase</option>
+                    <option>Vehicle Purchase</option>
+                    <option>Retirement Planning</option>
+                    <option>Other</option>
+                </select>
+
+                <label>Target Amount (₹)</label>
+                <input type="number" name="target"
+                       placeholder="500000" required>
+
+                <label>Already Saved (₹)</label>
+                <input type="number" name="saved"
+                       placeholder="100000" required>
+
+                <label>Target Date</label>
+                <input type="date" name="date" required>
+
+                <label>Priority Level</label>
+                <select name="priority" required>
+                    <option value="High">High Priority</option>
+                    <option value="Medium" selected>Medium Priority</option>
+                    <option value="Low">Low Priority</option>
+                </select>
+
+                <button class="btn-green" type="submit">
+                    Add Goal
+                </button>
+
+            </form>
+        </div>
+
+        <!-- Goal Tips -->
+        <div class="card">
+            <h3>💡 Goal Planning Tips</h3>
+            <br>
+            <p style="color:#555; line-height:2.2;">
+                ✅ Set realistic and measurable goals<br>
+                ✅ Break big goals into monthly targets<br>
+                ✅ Save at least 20% of income monthly<br>
+                ✅ Automate savings transfers<br>
+                ✅ Review goals every 3 months<br>
+                ✅ Invest surplus savings wisely<br>
+                ✅ Keep emergency fund as top priority
+            </p>
+        </div>
+    </div>
+
+    <!-- Goals Progress Table -->
+    <div class="card">
+        <h3>Goal Progress Tracker</h3>
+        {% if goals %}
+        <table>
+            <tr>
+                <th>Goal</th>
+                <th>Priority</th>
+                <th>Target Amount</th>
+                <th>Saved Amount</th>
+                <th>Remaining</th>
+                <th>Monthly Savings Needed</th>
+                <th>Days Left</th>
+                <th>Progress</th>
+                <th>Target Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+            {% for g in goals %}
+            <tr>
+                <td>
+                    <b>{{ g.goal_name }}</b>
+                    {% if g.just_completed %}
+                    <div class="celebration-msg">🎉 Goal Achieved!</div>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="priority-tag priority-{{ g.priority }}">{{ g.priority }}</span>
+                </td>
+                <td>₹{{ "{:,.2f}".format(g.target_amount) }}</td>
+                <td style="color:#4CAF50; font-weight:bold;">
+                    ₹{{ "{:,.2f}".format(g.saved_amount) }}
+                </td>
+                <td style="color:#f44336; font-weight:bold;">
+                    ₹{{ "{:,.2f}".format(g.remaining) }}
+                </td>
+                <td>
+                    {% if g.status == 'Completed' %}
+                    <span style="color:#4CAF50;">—</span>
+                    {% else %}
+                    ₹{{ "{:,.2f}".format(g.monthly_required) }}/mo
+                    {% if g.ai_suggested > 0 %}
+                    <br><small style="color:#2196F3;">AI suggests: ₹{{ "{:,.2f}".format(g.ai_suggested) }}/mo</small>
+                    {% endif %}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if g.days_remaining is not none %}
+                        {% if g.days_remaining < 0 %}
+                        <span class="days-remaining days-overdue">Overdue by {{ -g.days_remaining }} days</span>
+                        {% elif g.days_remaining <= 30 %}
+                        <span class="days-remaining days-soon">{{ g.days_remaining }} days left</span>
+                        {% else %}
+                        <span class="days-remaining days-ok">{{ g.days_remaining }} days left</span>
+                        {% endif %}
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+                <td style="width:180px;">
+                    {{ g.percentage }}%
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill"
+                             style="width:{{ [g.percentage, 100]|min }}%;">
+                        </div>
+                    </div>
+                </td>
+                <td>{{ g.target_date }}</td>
+                <td>
+                    {% if g.status == 'Completed' %}
+                    <span style="color:#4CAF50; font-weight:bold;">
+                        ✅ Completed
+                    </span>
+                    {% else %}
+                    <span style="color:#FF9800; font-weight:bold;">
+                        🔄 In Progress
+                    </span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/edit_goal/{{ g.id }}"
+                       style="color:#2196F3; font-weight:bold; text-decoration:none; margin-right:10px;">✏️ Edit</a>
+                    <a href="/delete_goal/{{ g.id }}"
+                       onclick="return confirm('Delete this goal?');"
+                       style="color:#f44336; font-weight:bold; text-decoration:none;">🗑️ Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p style="color:#888; text-align:center; padding:20px;">
+            No goals added yet. Set your first financial goal above!
+        </p>
+        {% endif %}
+    </div>
+</div>
+<!-- Dark Mode Toggle -->
+<button class="dark-toggle" 
+        onclick="toggleDark()" 
+        id="darkBtn">🌙</button>
+<script>
+// Loading Spinner
+window.addEventListener('load', function() {
+    document.getElementById('loading-overlay')
+        .style.display = 'none';
+});
+
+// Dark Mode
+function toggleDark() {
+    document.body.classList.toggle('dark-mode');
+    const btn = document.getElementById('darkBtn');
+    if (document.body.classList.contains('dark-mode')) {
+        btn.textContent = '☀️';
+        localStorage.setItem('darkMode', 'on');
+    } else {
+        btn.textContent = '🌙';
+        localStorage.setItem('darkMode', 'off');
+    }
+}
+
+// Remember dark mode on reload
+if (localStorage.getItem('darkMode') === 'on') {
+    document.body.classList.add('dark-mode');
+    document.getElementById('darkBtn').textContent = '☀️';
+}
+
+// Animated Number Counters
+function animateCounter(element, target, prefix) {
+    let start = 0;
+    const duration = 1500;
+    const step = target / (duration / 16);
+    const timer = setInterval(function() {
+        start += step;
+        if (start >= target) {
+            start = target;
+            clearInterval(timer);
+        }
+        element.textContent = prefix +
+            Math.floor(start).toLocaleString('en-IN');
+    }, 16);
+}
+
+window.addEventListener('load', function() {
+    document.querySelectorAll('.stat-card p')
+        .forEach(function(el) {
+            const text = el.textContent.trim();
+            if (text.startsWith('₹')) {
+                const num = parseFloat(
+                    text.replace('₹','').replace(/,/g,'')
+                );
+                if (!isNaN(num)) {
+                    animateCounter(el, num, '₹');
+                }
+            } else if (text.endsWith('%')) {
+                const num = parseFloat(text.replace('%',''));
+                if (!isNaN(num)) {
+                    const timer = setInterval(function() {
+                        // handled separately
+                    }, 16);
+                }
+            }
+        });
+});
+</script>
+
+</body>
+</html>

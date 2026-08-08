@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - Financial Health Score</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .score-circle {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+            border: 12px solid {{ status_color }};
+        }
+        .score-number {
+            font-size: 60px;
+            font-weight: bold;
+            color: {{ status_color }};
+            line-height: 1;
+        }
+        .score-label {
+            font-size: 14px;
+            color: #888;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 8px 25px;
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            background-color: {{ status_color }};
+            margin: 10px auto;
+            text-align: center;
+        }
+        .indicator-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .indicator-label {
+            font-size: 14px;
+            color: #555;
+            font-weight: bold;
+        }
+        .indicator-value {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .indicator-bar-bg {
+            background: #e0e0e0;
+            border-radius: 5px;
+            height: 8px;
+            width: 150px;
+        }
+        .indicator-bar-fill {
+            height: 8px;
+            border-radius: 5px;
+        }
+        .rec-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Spinner -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">🏠 Dashboard</a>
+    <a href="/add_expense">💸 Expenses</a>
+    <a href="/budget">📋 Budget</a>
+    <a href="/investments">📈 Investments</a>
+    <a href="/goals">🎯 Goals</a>
+    <a href="/wallets">Wallets</a>
+    <a href="/bills">Bills & Calendar</a>
+    <a href="/subscriptions">Subscriptions</a>
+    <a href="/challenges">Challenges</a>
+    <a href="/spending_personality">Spending Personality</a>
+    <a href="/simulator">What-If Simulator</a>
+    <a href="/analytics">📊 Analytics</a>
+    <a href="/spending_analysis">🔍 Spending</a>
+    <a href="/budget_recommendations">💡 Reco</a>
+    <a href="/health_score">❤️ Health</a>
+    <a href="/notifications">🔔 Alerts</a>
+    <a href="/ai_insights">🧠 AI Insights</a>
+    <a href="/intelligence_dashboard">⚡ Intel</a>
+    <a href="/logout">🚪 Logout</a>
+</nav>
+
+<div class="container">
+    <p class="page-title">Financial Health Score</p>
+    <p class="subtitle">
+        Your complete financial wellness report
+    </p>
+
+    <!-- Summary Cards -->
+    <div class="stats-grid">
+        <div class="stat-card green">
+            <h3>Monthly Income</h3>
+            <p>₹{{ "{:,.2f}".format(monthly_income) }}</p>
+        </div>
+        <div class="stat-card red">
+            <h3>Total Expenses</h3>
+            <p>₹{{ "{:,.2f}".format(total_exp) }}</p>
+        </div>
+        <div class="stat-card blue">
+            <h3>Total Savings</h3>
+            <p>₹{{ "{:,.2f}".format(savings) }}</p>
+        </div>
+        <div class="stat-card orange">
+            <h3>Investments</h3>
+            <p>₹{{ "{:,.2f}".format(total_invested) }}</p>
+        </div>
+    </div>
+
+    <div class="two-col">
+        <!-- Score Card -->
+        <div class="card" style="text-align:center;">
+            <h3>Your Financial Health Score</h3>
+
+            <div class="score-circle">
+                <div class="score-number">{{ score }}</div>
+                <div class="score-label">out of 100</div>
+            </div>
+
+            <div class="status-badge">{{ status }}</div>
+
+            <p style="color:#555; margin-top:15px; font-size:14px;">
+                {{ status_msg }}
+            </p>
+
+            <br>
+            <canvas id="scoreChart"></canvas>
+        </div>
+
+        <!-- Financial Indicators -->
+        <div class="card">
+            <h3>📊 Financial Indicators</h3>
+            <br>
+
+            <div class="indicator-row">
+                <div>
+                    <div class="indicator-label">
+                        ✅ Savings Ratio
+                    </div>
+                    <div class="indicator-bar-bg" style="margin-top:5px;">
+                        <div class="indicator-bar-fill"
+                             style="width:{{ [savings_ratio,100]|min }}%;
+                                    background:#4CAF50;">
+                        </div>
+                    </div>
+                </div>
+                <div class="indicator-value"
+                     style="color:#4CAF50;">
+                    {{ savings_ratio }}%
+                </div>
+            </div>
+
+            <div class="indicator-row">
+                <div>
+                    <div class="indicator-label">
+                        📉 Expense Ratio
+                    </div>
+                    <div class="indicator-bar-bg" style="margin-top:5px;">
+                        <div class="indicator-bar-fill"
+                             style="width:{{ [expense_ratio,100]|min }}%;
+                                    background:#f44336;">
+                        </div>
+                    </div>
+                </div>
+                <div class="indicator-value"
+                     style="color:#f44336;">
+                    {{ expense_ratio }}%
+                </div>
+            </div>
+
+            <div class="indicator-row">
+                <div>
+                    <div class="indicator-label">
+                        📈 Investment Growth
+                    </div>
+                    <div class="indicator-bar-bg" style="margin-top:5px;">
+                        <div class="indicator-bar-fill"
+                             style="width:{{ [investment_growth,100]|min }}%;
+                                    background:#2196F3;">
+                        </div>
+                    </div>
+                </div>
+                <div class="indicator-value"
+                     style="color:#2196F3;">
+                    {{ investment_growth }}%
+                </div>
+            </div>
+
+            <div class="indicator-row">
+                <div>
+                    <div class="indicator-label">
+                        🎯 Goal Completion
+                    </div>
+                    <div class="indicator-bar-bg" style="margin-top:5px;">
+                        <div class="indicator-bar-fill"
+                             style="width:{{ [goal_completion,100]|min }}%;
+                                    background:#FF9800;">
+                        </div>
+                    </div>
+                </div>
+                <div class="indicator-value"
+                     style="color:#FF9800;">
+                    {{ goal_completion }}%
+                </div>
+            </div>
+
+            <br>
+            <h3>💡 AI Recommendations</h3>
+            <br>
+            {% for rec in ai_recommendations %}
+            <div class="rec-item">
+                <span>→</span>
+                <span>{{ rec }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Score Breakdown Chart -->
+    <div class="card">
+        <h3>Score Breakdown</h3>
+        <canvas id="breakdownChart" height="80"></canvas>
+    </div>
+
+</div>
+
+<script>
+    // Doughnut Score Chart
+    const scoreCtx = document
+        .getElementById('scoreChart').getContext('2d');
+    new Chart(scoreCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Score', 'Remaining'],
+            datasets: [{
+                data: [{{ score }}, {{ 100 - score }}],
+                backgroundColor: ['{{ status_color }}', '#e0e0e0'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '75%',
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // Breakdown Bar Chart
+    const bdCtx = document
+        .getElementById('breakdownChart').getContext('2d');
+    new Chart(bdCtx, {
+        type: 'bar',
+        data: {
+            labels: [
+                'Savings Ratio',
+                'Expense Ratio',
+                'Investment Growth',
+                'Goal Completion'
+            ],
+            datasets: [{
+                label: 'Your Score (%)',
+                data: [
+                    {{ savings_ratio }},
+                    {{ expense_ratio }},
+                    {{ investment_growth }},
+                    {{ goal_completion }}
+                ],
+                backgroundColor: [
+                    '#4CAF50',
+                    '#f44336',
+                    '#2196F3',
+                    '#FF9800'
+                ],
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true, max: 100 } }
+        }
+    });
+</script>
+<!-- Dark Mode Toggle -->
+<button class="dark-toggle" 
+        onclick="toggleDark()" 
+        id="darkBtn">🌙</button>
+<script>
+// Loading Spinner
+window.addEventListener('load', function() {
+    document.getElementById('loading-overlay')
+        .style.display = 'none';
+});
+
+// Dark Mode
+function toggleDark() {
+    document.body.classList.toggle('dark-mode');
+    const btn = document.getElementById('darkBtn');
+    if (document.body.classList.contains('dark-mode')) {
+        btn.textContent = '☀️';
+        localStorage.setItem('darkMode', 'on');
+    } else {
+        btn.textContent = '🌙';
+        localStorage.setItem('darkMode', 'off');
+    }
+}
+
+// Remember dark mode on reload
+if (localStorage.getItem('darkMode') === 'on') {
+    document.body.classList.add('dark-mode');
+    document.getElementById('darkBtn').textContent = '☀️';
+}
+
+// Animated Number Counters
+function animateCounter(element, target, prefix) {
+    let start = 0;
+    const duration = 1500;
+    const step = target / (duration / 16);
+    const timer = setInterval(function() {
+        start += step;
+        if (start >= target) {
+            start = target;
+            clearInterval(timer);
+        }
+        element.textContent = prefix +
+            Math.floor(start).toLocaleString('en-IN');
+    }, 16);
+}
+
+window.addEventListener('load', function() {
+    document.querySelectorAll('.stat-card p')
+        .forEach(function(el) {
+            const text = el.textContent.trim();
+            if (text.startsWith('₹')) {
+                const num = parseFloat(
+                    text.replace('₹','').replace(/,/g,'')
+                );
+                if (!isNaN(num)) {
+                    animateCounter(el, num, '₹');
+                }
+            } else if (text.endsWith('%')) {
+                const num = parseFloat(text.replace('%',''));
+                if (!isNaN(num)) {
+                    const timer = setInterval(function() {
+                        // handled separately
+                    }, 16);
+                }
+            }
+        });
+});
+</script>
+
+</body>
+</html>

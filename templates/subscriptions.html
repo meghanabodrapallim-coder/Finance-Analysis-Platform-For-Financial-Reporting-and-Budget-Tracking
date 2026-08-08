@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - Subscriptions</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/add_expense">Expenses</a>
+    <a href="/budget">Budget</a>
+    <a href="/investments">Investments</a>
+    <a href="/goals">Goals</a>
+    <a href="/wallets">Wallets</a>
+    <a href="/bills">Bills & Calendar</a>
+    <a href="/subscriptions">Subscriptions</a>
+    <a href="/challenges">Challenges</a>
+    <a href="/spending_personality">Spending Personality</a>
+    <a href="/simulator">What-If Simulator</a>
+    <a href="/analytics">Analytics</a>
+    <a href="/bill_splitter">Bill Splitter</a>
+    <a href="/ai_analysis">AI Analysis</a>
+    <a href="/profile">Profile</a>
+    <a href="/settings">Settings</a>
+
+    <div class="nav-profile">
+        <div class="profile-avatar">{{ session['user_name'][0] | upper }}</div>
+        <div class="profile-info">
+            <span class="profile-name">{{ session['user_name'] }}</span>
+            <a href="/logout" class="profile-logout">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <p class="page-title">Subscription Tracker</p>
+    <p class="subtitle">Track Netflix, Spotify, Prime, and all recurring subscriptions</p>
+
+    {% if message %}
+    <div class="success-msg">✅ {{ message }}</div>
+    {% endif %}
+
+    <div class="stats-grid">
+        <div class="stat-card orange">
+            <h3>Total Monthly Cost</h3>
+            <p>₹{{ "{:,.2f}".format(total_monthly_cost) }}</p>
+            <span>All Subscriptions</span>
+        </div>
+        <div class="stat-card red">
+            <h3>Total Yearly Cost</h3>
+            <p>₹{{ "{:,.2f}".format(total_yearly_cost) }}</p>
+            <span>Projected Annual Spend</span>
+        </div>
+    </div>
+
+    <div class="two-col">
+        <div class="card">
+            <h3>Add New Subscription</h3>
+            <form method="POST" action="/subscriptions">
+                <label>Subscription Name</label>
+                <input type="text" name="subscription_name" placeholder="e.g. Netflix" required>
+
+                <label>Amount (₹)</label>
+                <input type="number" name="amount" placeholder="499" required>
+
+                <label>Billing Cycle</label>
+                <select name="billing_cycle" required>
+                    <option value="Monthly">Monthly</option>
+                    <option value="Yearly">Yearly</option>
+                </select>
+
+                <label>Next Billing Date</label>
+                <input type="date" name="next_billing_date" required>
+
+                <label>Category</label>
+                <select name="category" required>
+                    <option>Streaming</option>
+                    <option>Music</option>
+                    <option>Shopping</option>
+                    <option>Software</option>
+                    <option>Other</option>
+                </select>
+
+                <button class="btn-orange" type="submit">Add Subscription</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>Your Subscriptions</h3>
+            {% if subscriptions %}
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <th>Amount</th>
+                    <th>Cycle</th>
+                    <th>Next Billing</th>
+                    <th>Actions</th>
+                </tr>
+                {% for s in subscriptions %}
+                <tr>
+                    <td>
+                        <b>{{ s.subscription_name }}</b><br>
+                        <small style="color:#888;">{{ s.category }}</small>
+                    </td>
+                    <td>₹{{ "{:,.2f}".format(s.amount) }}</td>
+                    <td>{{ s.billing_cycle }}</td>
+                    <td>
+                        {{ s.next_billing_date }}
+                        {% if s.days_until is not none %}
+                            {% if s.days_until <= 3 and s.days_until >= 0 %}
+                            <br><small style="color:#f44336; font-weight:bold;">in {{ s.days_until }} days</small>
+                            {% elif s.days_until < 0 %}
+                            <br><small style="color:#f44336; font-weight:bold;">overdue</small>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="/edit_subscription/{{ s.id }}" style="color:#2196F3; font-weight:bold; text-decoration:none; margin-right:10px;">✏️ Edit</a>
+                        <a href="/delete_subscription/{{ s.id }}" onclick="return confirm('Cancel this subscription?');" style="color:#f44336; font-weight:bold; text-decoration:none;">🗑️ Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% else %}
+            <p style="color:#888;">No subscriptions added yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

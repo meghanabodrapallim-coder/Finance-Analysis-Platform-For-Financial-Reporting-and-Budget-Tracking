@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Monthly Expense Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        @media print { nav, .no-print { display: none !important; } }
+    </style>
+</head>
+<body>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/reports">Reports</a>
+    <div class="nav-profile">
+        <div class="profile-avatar">{{ session['user_name'][0] | upper }}</div>
+        <div class="profile-info">
+            <span class="profile-name">{{ session['user_name'] }}</span>
+            <a href="/logout" class="profile-logout">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <p class="page-title">Monthly Expense Report — {{ month }}</p>
+    <p class="subtitle">Generated on {{ generated_on }} for {{ session['user_name'] }}</p>
+
+<div class="no-print" style="display:flex; gap:10px; margin-bottom:15px;">
+        <button class="btn-blue" style="width:auto; padding:10px 20px;" onclick="window.print()">🖨️ Print Report</button>
+        <a href="/reports/investment/excel"><button class="btn-green" style="width:auto; padding:10px 20px;">📊 Download Excel</button></a>
+    </div>
+    <div class="card">
+        <h3>Summary</h3>
+        <p style="font-size:28px; font-weight:bold; color:#f44336;">₹{{ "{:,.2f}".format(total) }}</p>
+        <p style="color:#888;">Total spent in {{ month }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Category Breakdown</h3>
+        <table>
+            <tr><th>Category</th><th>Total</th><th>% of Spend</th></tr>
+            {% for c in cat_totals %}
+            <tr>
+                <td>{{ c.category }}</td>
+                <td>₹{{ "{:,.2f}".format(c.total) }}</td>
+                <td>{{ ((c.total / total) * 100) | round(1) if total > 0 else 0 }}%</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>All Transactions</h3>
+        {% if expenses %}
+        <table>
+            <tr><th>Date</th><th>Category</th><th>Amount</th><th>Description</th></tr>
+            {% for e in expenses %}
+            <tr>
+                <td>{{ e['date'] }}</td>
+                <td>{{ e['category'] }}</td>
+                <td>₹{{ "{:,.2f}".format(e['amount']) }}</td>
+                <td>{{ e['description'] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p style="color:#888;">No expenses recorded this month.</p>
+        {% endif %}
+    </div>
+</div>
+
+</body>
+</html>

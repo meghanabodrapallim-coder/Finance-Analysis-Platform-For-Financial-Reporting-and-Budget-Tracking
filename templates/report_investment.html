@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Investment Performance Report</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        @media print { nav, .no-print { display: none !important; } }
+    </style>
+</head>
+<body>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/reports">Reports</a>
+    <div class="nav-profile">
+        <div class="profile-avatar">{{ session['user_name'][0] | upper }}</div>
+        <div class="profile-info">
+            <span class="profile-name">{{ session['user_name'] }}</span>
+            <a href="/logout" class="profile-logout">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <p class="page-title">Investment Performance Report</p>
+    <p class="subtitle">Generated on {{ generated_on }} for {{ session['user_name'] }}</p>
+
+<div class="no-print" style="display:flex; gap:10px; margin-bottom:15px;">
+        <button class="btn-blue" style="width:auto; padding:10px 20px;" onclick="window.print()">🖨️ Print Report</button>
+        <a href="/reports/investment/excel"><button class="btn-green" style="width:auto; padding:10px 20px;">📊 Download Excel</button></a>
+    </div>
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <h3>Total Invested</h3>
+            <p>₹{{ "{:,.2f}".format(total_invested) }}</p>
+        </div>
+        <div class="stat-card green">
+            <h3>Current Value</h3>
+            <p>₹{{ "{:,.2f}".format(total_current) }}</p>
+        </div>
+        <div class="stat-card {% if total_pl >= 0 %}green{% else %}red{% endif %}">
+            <h3>Total Profit/Loss</h3>
+            <p>{% if total_pl >= 0 %}+{% endif %}₹{{ "{:,.2f}".format(total_pl) }}</p>
+        </div>
+        <div class="stat-card orange">
+            <h3>Overall ROI</h3>
+            <p>{{ overall_roi }}%</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Investment Details</h3>
+        {% if report_data %}
+        <table>
+            <tr><th>Asset Type</th><th>Name</th><th>Invested</th><th>Current Value</th><th>Profit/Loss</th><th>Return %</th></tr>
+            {% for r in report_data %}
+            <tr>
+                <td>{{ r.asset }}</td>
+                <td><b>{{ r.name }}</b></td>
+                <td>₹{{ "{:,.2f}".format(r.invested) }}</td>
+                <td>₹{{ "{:,.2f}".format(r.current) }}</td>
+                <td style="color:{% if r.pl >= 0 %}#4CAF50{% else %}#f44336{% endif %};">
+                    {% if r.pl >= 0 %}+{% endif %}₹{{ "{:,.2f}".format(r.pl) }}
+                </td>
+                <td style="color:{% if r.return_pct >= 0 %}#4CAF50{% else %}#f44336{% endif %};">{{ r.return_pct }}%</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p style="color:#888;">No investments recorded yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+</body>
+</html>

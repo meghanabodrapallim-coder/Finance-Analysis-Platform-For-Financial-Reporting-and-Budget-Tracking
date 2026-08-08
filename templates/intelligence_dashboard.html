@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - Intelligence Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .progress-bar-bg {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 10px;
+            margin-top: 5px;
+        }
+        .progress-bar-fill {
+            height: 10px;
+            border-radius: 10px;
+            background: #4CAF50;
+        }
+        .notif-item {
+            padding: 10px 15px;
+            border-left: 4px solid #f44336;
+            background: #fff8f8;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #555;
+        }
+        .rec-item {
+            padding: 10px 15px;
+            border-left: 4px solid #FF9800;
+            background: #fffbf0;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #555;
+        }
+        .insight-item {
+            padding: 10px 15px;
+            border-left: 4px solid #2196F3;
+            background: #f0f8ff;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #555;
+        }
+        .score-box {
+            text-align: center;
+            padding: 20px;
+        }
+        .score-big {
+            font-size: 64px;
+            font-weight: bold;
+            line-height: 1;
+        }
+        .status-pill {
+            display: inline-block;
+            padding: 5px 20px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        .three-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Spinner -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">🏠 Dashboard</a>
+    <a href="/add_expense">💸 Expenses</a>
+    <a href="/budget">📋 Budget</a>
+    <a href="/investments">📈 Investments</a>
+    <a href="/goals">🎯 Goals</a>
+    <a href="/wallets">Wallets</a>
+    <a href="/bills">Bills & Calendar</a>
+    <a href="/subscriptions">Subscriptions</a>
+    <a href="/challenges">Challenges</a>
+    <a href="/spending_personality">Spending Personality</a>
+    <a href="/simulator">What-If Simulator</a>
+    <a href="/analytics">📊 Analytics</a>
+    <a href="/spending_analysis">🔍 Spending</a>
+    <a href="/budget_recommendations">💡 Reco</a>
+    <a href="/health_score">❤️ Health</a>
+    <a href="/notifications">🔔 Alerts</a>
+    <a href="/ai_insights">🧠 AI Insights</a>
+    <a href="/intelligence_dashboard">⚡ Intel</a>
+    <a href="/logout">🚪 Logout</a>
+</nav>
+
+<div class="container">
+    <p class="page-title">🧠 Intelligence Dashboard</p>
+    <p class="subtitle">
+        Complete financial intelligence at a glance
+    </p>
+
+    <!-- Top Summary Cards -->
+    <div class="stats-grid">
+        <div class="stat-card green">
+            <h3>Monthly Income</h3>
+            <p>₹{{ "{:,.2f}".format(monthly_income) }}</p>
+            <span>This Month</span>
+        </div>
+        <div class="stat-card red">
+            <h3>Total Expenses</h3>
+            <p>₹{{ "{:,.2f}".format(total_exp) }}</p>
+            <span>This Month</span>
+        </div>
+        <div class="stat-card blue">
+            <h3>Total Savings</h3>
+            <p>₹{{ "{:,.2f}".format(savings) }}</p>
+            <span>This Month</span>
+        </div>
+        <div class="stat-card orange">
+            <h3>Budget Utilization</h3>
+            <p>{{ budget_utilization }}%</p>
+            <span>of Monthly Budget</span>
+        </div>
+    </div>
+
+    <!-- Row 1: Score + Charts -->
+    <div class="three-col">
+
+        <!-- Health Score -->
+        <div class="card score-box">
+            <h3>Financial Health Score</h3>
+            <div class="score-big"
+                 style="color:{{ status_color }};">
+                {{ score }}
+            </div>
+            <p style="color:#888; font-size:14px;">/ 100</p>
+            <div class="status-pill"
+                 style="background:{{ status_color }};">
+                {{ status }}
+            </div>
+            <br><br>
+            <canvas id="scoreDonut"></canvas>
+        </div>
+
+        <!-- Expense Pie Chart -->
+        <div class="card">
+            <h3>📊 Spending Analysis</h3>
+            <canvas id="expPie"></canvas>
+        </div>
+
+        <!-- Monthly Trend -->
+        <div class="card">
+            <h3>📈 Monthly Trend</h3>
+            <canvas id="trendLine"></canvas>
+        </div>
+
+    </div>
+
+    <!-- Row 2: Recommendations + AI Insights + Notifications -->
+    <div class="three-col">
+
+        <!-- Budget Recommendations -->
+        <div class="card">
+            <h3>💡 Budget Recommendations</h3>
+            <br>
+            {% if recommendations %}
+                {% for rec in recommendations %}
+                <div class="rec-item">→ {{ rec }}</div>
+                {% endfor %}
+            {% else %}
+            <div class="success-msg">
+                ✅ No recommendations. Finances look great!
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- AI Financial Insights -->
+        <div class="card">
+            <h3>🧠 AI Financial Insights</h3>
+            <br>
+            {% for insight in ai_insights_list %}
+            <div class="insight-item">{{ insight }}</div>
+            {% endfor %}
+            <br>
+            <p style="font-size:12px; color:#888;">
+                Savings Rate: <b>{{ savings_ratio }}%</b> |
+                Expense Ratio: <b>{{ expense_ratio }}%</b> |
+                Investment Growth: <b>{{ investment_growth }}%</b>
+            </p>
+        </div>
+
+        <!-- Active Notifications -->
+        <div class="card">
+            <h3>🔔 Recent Alerts</h3>
+            <br>
+            {% if notifications %}
+                {% for n in notifications %}
+                <div class="notif-item">
+                    <b>{{ n['type'] }}</b><br>
+                    {{ n['message'] }}
+                </div>
+                {% endfor %}
+                <br>
+                <a href="/notifications"
+                   style="color:#2196F3; font-size:13px;">
+                    View all notifications →
+                </a>
+            {% else %}
+            <div class="success-msg">
+                ✅ No active alerts right now!
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- Row 3: Goal Progress -->
+    <div class="card">
+        <h3>🎯 Goal Progress Tracker</h3>
+        {% if goals_data %}
+        <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:15px; margin-top:15px;">
+            {% for g in goals_data %}
+            <div style="padding:15px; background:#f8f9fa; border-radius:8px;">
+                <b style="font-size:14px;">{{ g.goal_name }}</b>
+                <p style="font-size:12px; color:#888; margin:4px 0;">
+                    ₹{{ "{:,.0f}".format(g.saved) }} /
+                    ₹{{ "{:,.0f}".format(g.target) }}
+                </p>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill"
+                         style="width:{{ [g.percentage,100]|min }}%;">
+                    </div>
+                </div>
+                <p style="font-size:13px; font-weight:bold;
+                          color:#4CAF50; margin-top:5px;">
+                    {{ g.percentage }}% Complete
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:#888; text-align:center; padding:20px;">
+            No goals added yet.
+            <a href="/goals">Set your first goal</a>
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- Income vs Expense Bar Chart -->
+    <div class="card">
+        <h3>💰 Income vs Expense vs Savings</h3>
+        <canvas id="summaryBar" height="60"></canvas>
+    </div>
+
+</div>
+
+<script>
+    // Score Donut
+    const scoreCtx = document
+        .getElementById('scoreDonut').getContext('2d');
+    new Chart(scoreCtx, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [{{ score }}, {{ 100 - score }}],
+                backgroundColor: ['{{ status_color }}', '#e0e0e0'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            cutout: '75%',
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // Expense Pie Chart
+    const pieCtx = document
+        .getElementById('expPie').getContext('2d');
+    new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ cat_labels | tojson }},
+            datasets: [{
+                data: {{ cat_amounts | tojson }},
+                backgroundColor: [
+                    '#2196F3','#4CAF50','#FF9800',
+                    '#f44336','#9C27B0','#00BCD4','#FF5722'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+
+    // Monthly Trend Line
+    const lineCtx = document
+        .getElementById('trendLine').getContext('2d');
+    new Chart(lineCtx, {
+        type: 'line',
+        data: {
+            labels: {{ monthly_labels | tojson }},
+            datasets: [{
+                label: 'Expenses',
+                data: {{ monthly_amounts | tojson }},
+                borderColor: '#f44336',
+                backgroundColor: 'rgba(244,67,54,0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    // Summary Bar Chart
+    const barCtx = document
+        .getElementById('summaryBar').getContext('2d');
+    new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: ['This Month'],
+            datasets: [
+                {
+                    label: 'Income',
+                    data: [{{ monthly_income }}],
+                    backgroundColor: '#4CAF50'
+                },
+                {
+                    label: 'Expenses',
+                    data: [{{ total_exp }}],
+                    backgroundColor: '#f44336'
+                },
+                {
+                    label: 'Savings',
+                    data: [{{ savings }}],
+                    backgroundColor: '#2196F3'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+</script>
+<!-- Dark Mode Toggle -->
+<button class="dark-toggle" 
+        onclick="toggleDark()" 
+        id="darkBtn">🌙</button>
+<script>
+// Loading Spinner
+window.addEventListener('load', function() {
+    document.getElementById('loading-overlay')
+        .style.display = 'none';
+});
+
+// Dark Mode
+function toggleDark() {
+    document.body.classList.toggle('dark-mode');
+    const btn = document.getElementById('darkBtn');
+    if (document.body.classList.contains('dark-mode')) {
+        btn.textContent = '☀️';
+        localStorage.setItem('darkMode', 'on');
+    } else {
+        btn.textContent = '🌙';
+        localStorage.setItem('darkMode', 'off');
+    }
+}
+
+// Remember dark mode on reload
+if (localStorage.getItem('darkMode') === 'on') {
+    document.body.classList.add('dark-mode');
+    document.getElementById('darkBtn').textContent = '☀️';
+}
+
+// Animated Number Counters
+function animateCounter(element, target, prefix) {
+    let start = 0;
+    const duration = 1500;
+    const step = target / (duration / 16);
+    const timer = setInterval(function() {
+        start += step;
+        if (start >= target) {
+            start = target;
+            clearInterval(timer);
+        }
+        element.textContent = prefix +
+            Math.floor(start).toLocaleString('en-IN');
+    }, 16);
+}
+
+window.addEventListener('load', function() {
+    document.querySelectorAll('.stat-card p')
+        .forEach(function(el) {
+            const text = el.textContent.trim();
+            if (text.startsWith('₹')) {
+                const num = parseFloat(
+                    text.replace('₹','').replace(/,/g,'')
+                );
+                if (!isNaN(num)) {
+                    animateCounter(el, num, '₹');
+                }
+            } else if (text.endsWith('%')) {
+                const num = parseFloat(text.replace('%',''));
+                if (!isNaN(num)) {
+                    const timer = setInterval(function() {
+                        // handled separately
+                    }, 16);
+                }
+            }
+        });
+});
+</script>
+
+</body>
+</html>

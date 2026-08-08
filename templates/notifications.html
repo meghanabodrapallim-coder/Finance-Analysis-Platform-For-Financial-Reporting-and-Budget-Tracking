@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - Notifications</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .notif-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border-left: 5px solid #ddd;
+            background: white;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.06);
+        }
+        .notif-high {
+            border-left-color: #f44336;
+            background: #fff8f8;
+        }
+        .notif-medium {
+            border-left-color: #FF9800;
+            background: #fffbf0;
+        }
+        .notif-low {
+            border-left-color: #4CAF50;
+            background: #f8fff8;
+        }
+        .notif-icon { font-size: 22px; min-width:35px; }
+        .notif-type {
+            font-weight: bold;
+            font-size: 13px;
+            color: #1a1a2e;
+            margin-bottom: 3px;
+        }
+        .notif-msg {
+            font-size: 14px;
+            color: #555;
+        }
+        .notif-meta {
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 4px;
+        }
+        .badge-high   { background:#f44336; color:white; padding:2px 8px; border-radius:10px; font-size:11px; }
+        .badge-medium { background:#FF9800; color:white; padding:2px 8px; border-radius:10px; font-size:11px; }
+        .badge-low    { background:#4CAF50; color:white; padding:2px 8px; border-radius:10px; font-size:11px; }
+        .status-active    { color:#f44336; font-weight:bold; font-size:12px; }
+        .status-pending   { color:#FF9800; font-weight:bold; font-size:12px; }
+        .status-completed { color:#4CAF50; font-weight:bold; font-size:12px; }
+    </style>
+</head>
+<body>
+    <!-- Loading Spinner -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+</div>
+    
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">🏠 Dashboard</a>
+    <a href="/add_expense">💸 Expenses</a>
+    <a href="/budget">📋 Budget</a>
+    <a href="/investments">📈 Investments</a>
+    <a href="/goals">🎯 Goals</a>
+    <a href="/wallets">Wallets</a>
+    <a href="/bills">Bills & Calendar</a>
+    <a href="/subscriptions">Subscriptions</a>
+    <a href="/challenges">Challenges</a>
+    <a href="/spending_personality">Spending Personality</a>
+    <a href="/simulator">What-If Simulator</a>
+    <a href="/analytics">📊 Analytics</a>
+    <a href="/spending_analysis">🔍 Spending</a>
+    <a href="/budget_recommendations">💡 Reco</a>
+    <a href="/health_score">❤️ Health</a>
+    <a href="/notifications">🔔 Alerts</a>
+    <a href="/ai_insights">🧠 AI Insights</a>
+    <a href="/intelligence_dashboard">⚡ Intel</a>
+    <a href="/logout">🚪 Logout</a>
+</nav>
+
+<div class="container">
+    <p class="page-title">🔔 Alert & Notification System</p>
+    <p class="subtitle">
+        Stay informed about your financial activities
+    </p>
+
+    <!-- Summary Cards -->
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <h3>Total Alerts</h3>
+            <p>{{ total }}</p>
+            <span>All Notifications</span>
+        </div>
+        <div class="stat-card red">
+            <h3>High Priority</h3>
+            <p>{{ high }}</p>
+            <span>Needs Attention</span>
+        </div>
+        <div class="stat-card orange">
+            <h3>Medium Priority</h3>
+            <p>{{ medium }}</p>
+            <span>Monitor These</span>
+        </div>
+        <div class="stat-card green">
+            <h3>Low Priority</h3>
+            <p>{{ low }}</p>
+            <span>Informational</span>
+        </div>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="card">
+        <h3>Recent Notifications</h3>
+        <br>
+        {% if notifications %}
+
+        <!-- High Priority First -->
+        {% set high_notifs = notifications | selectattr('priority', 'equalto', 'High') | list %}
+        {% if high_notifs %}
+        <h4 style="color:#f44336; margin-bottom:10px;">
+            🔴 High Priority
+        </h4>
+        {% for n in high_notifs %}
+        <div class="notif-card notif-high">
+            <div class="notif-icon">
+                {{ n['type'].split(' ')[0] }}
+            </div>
+            <div style="flex:1;">
+                <div class="notif-type">
+                    {{ n['type'] }}
+                    <span class="badge-high">High</span>
+                </div>
+                <div class="notif-msg">{{ n['message'] }}</div>
+                <div class="notif-meta">
+                    Date: {{ n['created_date'] }} |
+                    <span class="status-active">
+                        {{ n['status'] }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- Medium Priority -->
+        {% set med_notifs = notifications | selectattr('priority', 'equalto', 'Medium') | list %}
+        {% if med_notifs %}
+        <br>
+        <h4 style="color:#FF9800; margin-bottom:10px;">
+            🟡 Medium Priority
+        </h4>
+        {% for n in med_notifs %}
+        <div class="notif-card notif-medium">
+            <div class="notif-icon">
+                {{ n['type'].split(' ')[0] }}
+            </div>
+            <div style="flex:1;">
+                <div class="notif-type">
+                    {{ n['type'] }}
+                    <span class="badge-medium">Medium</span>
+                </div>
+                <div class="notif-msg">{{ n['message'] }}</div>
+                <div class="notif-meta">
+                    Date: {{ n['created_date'] }} |
+                    <span class="status-pending">
+                        {{ n['status'] }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- Low Priority -->
+        {% set low_notifs = notifications | selectattr('priority', 'equalto', 'Low') | list %}
+        {% if low_notifs %}
+        <br>
+        <h4 style="color:#4CAF50; margin-bottom:10px;">
+            🟢 Low Priority
+        </h4>
+        {% for n in low_notifs %}
+        <div class="notif-card notif-low">
+            <div class="notif-icon">
+                {{ n['type'].split(' ')[0] }}
+            </div>
+            <div style="flex:1;">
+                <div class="notif-type">
+                    {{ n['type'] }}
+                    <span class="badge-low">Low</span>
+                </div>
+                <div class="notif-msg">{{ n['message'] }}</div>
+                <div class="notif-meta">
+                    Date: {{ n['created_date'] }} |
+                    <span class="status-completed">
+                        {{ n['status'] }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% else %}
+        <p style="color:#888; text-align:center; padding:30px;">
+            No notifications yet. Add expenses, budgets,
+            goals and investments to generate alerts!
+        </p>
+        {% endif %}
+    </div>
+
+</div>
+<!-- Dark Mode Toggle -->
+<button class="dark-toggle" 
+        onclick="toggleDark()" 
+        id="darkBtn">🌙</button>
+<script>
+// Loading Spinner
+window.addEventListener('load', function() {
+    document.getElementById('loading-overlay')
+        .style.display = 'none';
+});
+
+// Dark Mode
+function toggleDark() {
+    document.body.classList.toggle('dark-mode');
+    const btn = document.getElementById('darkBtn');
+    if (document.body.classList.contains('dark-mode')) {
+        btn.textContent = '☀️';
+        localStorage.setItem('darkMode', 'on');
+    } else {
+        btn.textContent = '🌙';
+        localStorage.setItem('darkMode', 'off');
+    }
+}
+
+// Remember dark mode on reload
+if (localStorage.getItem('darkMode') === 'on') {
+    document.body.classList.add('dark-mode');
+    document.getElementById('darkBtn').textContent = '☀️';
+}
+
+// Animated Number Counters
+function animateCounter(element, target, prefix) {
+    let start = 0;
+    const duration = 1500;
+    const step = target / (duration / 16);
+    const timer = setInterval(function() {
+        start += step;
+        if (start >= target) {
+            start = target;
+            clearInterval(timer);
+        }
+        element.textContent = prefix +
+            Math.floor(start).toLocaleString('en-IN');
+    }, 16);
+}
+
+window.addEventListener('load', function() {
+    document.querySelectorAll('.stat-card p')
+        .forEach(function(el) {
+            const text = el.textContent.trim();
+            if (text.startsWith('₹')) {
+                const num = parseFloat(
+                    text.replace('₹','').replace(/,/g,'')
+                );
+                if (!isNaN(num)) {
+                    animateCounter(el, num, '₹');
+                }
+            } else if (text.endsWith('%')) {
+                const num = parseFloat(text.replace('%',''));
+                if (!isNaN(num)) {
+                    const timer = setInterval(function() {
+                        // handled separately
+                    }, 16);
+                }
+            }
+        });
+});
+</script>
+</body>
+</html>

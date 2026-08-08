@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - Budget</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Loading Spinner -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<!-- Navigation -->
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">🏠 Dashboard</a>
+    <a href="/add_expense">💸 Expenses</a>
+    <a href="/budget">📋 Budget</a>
+    <a href="/investments">📈 Investments</a>
+    <a href="/goals">🎯 Goals</a>
+    <a href="/analytics">📊 Analytics</a>
+    <a href="/spending_analysis">🔍 Spending</a>
+    <a href="/budget_recommendations">💡 Reco</a>
+    <a href="/health_score">❤️ Health</a>
+    <a href="/notifications">🔔 Alerts</a>
+    <a href="/ai_insights">🧠 AI Insights</a>
+    <a href="/intelligence_dashboard">⚡ Intel</a>
+    <a href="/logout">🚪 Logout</a>
+</nav>
+
+<div class="container">
+    <p class="page-title">Budget Planner</p>
+    <p class="subtitle">Set and track your monthly budgets</p>
+
+    <div class="two-col">
+        <!-- Set Budget Form -->
+        <div class="card">
+            <h3>Set Monthly Budget</h3>
+            <form method="POST" action="/budget">
+                <label>Category</label>
+                <select name="category" required>
+                    <option value="">Select Category</option>
+                    <option>Food</option>
+                    <option>Travel</option>
+                    <option>Shopping</option>
+                    <option>Bills</option>
+                    <option>Entertainment</option>
+                    <option>Others</option>
+                </select>
+
+                <label>Budget Amount (₹)</label>
+                <input type="number" name="amount" 
+                       placeholder="5000" required>
+
+                <label>Month</label>
+                <input type="month" name="month" required>
+
+                <button class="btn-orange" 
+                        type="submit">Save Budget</button>
+            </form>
+        </div>
+
+        <!-- Budget Overview -->
+        <div class="card">
+            <h3>Budget Overview</h3>
+            {% if budget_data %}
+           <table>
+                <tr>
+                    <th>Category</th>
+                    <th>Budget</th>
+                    <th>Spent</th>
+                    <th>Remaining</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+                {% for b in budget_data %}
+                <tr>
+                    <td>{{ b.category }}</td>
+                    <td>₹{{ b.budget }}</td>
+                    <td>₹{{ b.spent }}</td>
+                    <td>₹{{ b.remaining }}</td>
+                    <td>
+                        {% if b.status == "On Track" %}
+                        <span class="on-track">✅ On Track</span>
+                        {% else %}
+                        <span class="over-budget">❌ Over Budget</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="/edit_budget/{{ b.id }}"
+                           style="color:#2196F3; font-weight:bold; text-decoration:none; margin-right:10px;">✏️ Edit</a>
+                        <a href="/delete_budget/{{ b.id }}"
+                           onclick="return confirm('Delete this budget?');"
+                           style="color:#f44336; font-weight:bold; text-decoration:none;">🗑️ Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+            <!-- Total Row -->
+            <br>
+            <table>
+                <tr>
+                    <th>Total Budget</th>
+                    <th>Total Spent</th>
+                    <th>Remaining</th>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold; color:#FF9800;">
+                        ₹{{ budget_data|sum(attribute='budget') }}
+                    </td>
+                    <td style="font-weight:bold; color:#f44336;">
+                        ₹{{ budget_data|sum(attribute='spent') }}
+                    </td>
+                    <td style="font-weight:bold; color:#4CAF50;">
+                        ₹{{ budget_data|sum(attribute='remaining') }}
+                    </td>
+                </tr>
+            </table>
+            {% else %}
+            <p style="color:#888;">
+                No budgets set yet. Add your first budget!
+            </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<!-- Dark Mode Toggle -->
+<button class="dark-toggle" 
+        onclick="toggleDark()" 
+        id="darkBtn">🌙</button>
+<script>
+// Loading Spinner
+window.addEventListener('load', function() {
+    document.getElementById('loading-overlay')
+        .style.display = 'none';
+});
+
+// Dark Mode
+function toggleDark() {
+    document.body.classList.toggle('dark-mode');
+    const btn = document.getElementById('darkBtn');
+    if (document.body.classList.contains('dark-mode')) {
+        btn.textContent = '☀️';
+        localStorage.setItem('darkMode', 'on');
+    } else {
+        btn.textContent = '🌙';
+        localStorage.setItem('darkMode', 'off');
+    }
+}
+
+// Remember dark mode on reload
+if (localStorage.getItem('darkMode') === 'on') {
+    document.body.classList.add('dark-mode');
+    document.getElementById('darkBtn').textContent = '☀️';
+}
+
+// Animated Number Counters
+function animateCounter(element, target, prefix) {
+    let start = 0;
+    const duration = 1500;
+    const step = target / (duration / 16);
+    const timer = setInterval(function() {
+        start += step;
+        if (start >= target) {
+            start = target;
+            clearInterval(timer);
+        }
+        element.textContent = prefix +
+            Math.floor(start).toLocaleString('en-IN');
+    }, 16);
+}
+
+window.addEventListener('load', function() {
+    document.querySelectorAll('.stat-card p')
+        .forEach(function(el) {
+            const text = el.textContent.trim();
+            if (text.startsWith('₹')) {
+                const num = parseFloat(
+                    text.replace('₹','').replace(/,/g,'')
+                );
+                if (!isNaN(num)) {
+                    animateCounter(el, num, '₹');
+                }
+            } else if (text.endsWith('%')) {
+                const num = parseFloat(text.replace('%',''));
+                if (!isNaN(num)) {
+                    const timer = setInterval(function() {
+                        // handled separately
+                    }, 16);
+                }
+            }
+        });
+});
+</script>
+
+
+</body>
+</html>

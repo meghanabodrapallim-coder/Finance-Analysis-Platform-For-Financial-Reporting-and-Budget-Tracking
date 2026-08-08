@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - Reports</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .report-card {
+            display: block;
+            padding: 25px;
+            border-radius: 10px;
+            text-decoration: none;
+            color: white;
+            margin-bottom: 15px;
+            transition: transform 0.2s;
+        }
+        .report-card:hover { transform: translateY(-3px); }
+        .report-card h3 { color: white; margin-bottom: 8px; }
+        .report-card p { color: rgba(255,255,255,0.9); font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/add_expense">Expenses</a>
+    <a href="/budget">Budget</a>
+    <a href="/investments">Investments</a>
+    <a href="/goals">Goals</a>
+    <a href="/reports">Reports</a>
+    <a href="/analytics">Analytics</a>
+    <a href="/profile">Profile</a>
+    <a href="/settings">Settings</a>
+
+    <div class="nav-profile">
+        <div class="profile-avatar">{{ session['user_name'][0] | upper }}</div>
+        <div class="profile-info">
+            <span class="profile-name">{{ session['user_name'] }}</span>
+            <a href="/logout" class="profile-logout">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <p class="page-title">Advanced Financial Reports</p>
+    <p class="subtitle">Detailed, printable reports for every part of your finances</p>
+
+    <div class="two-col">
+        <a href="/reports/expense" class="report-card" style="background:linear-gradient(135deg,#f44336,#e57373);">
+            <h3>📄 Monthly Expense Report</h3>
+            <p>Category-wise breakdown of this month's spending, transaction by transaction.</p>
+        </a>
+        <a href="/reports/budget" class="report-card" style="background:linear-gradient(135deg,#FF9800,#FFB74D);">
+            <h3>📊 Budget Utilization Report</h3>
+            <p>How much of each category's budget you've used, and what's remaining.</p>
+        </a>
+        <a href="/reports/investment" class="report-card" style="background:linear-gradient(135deg,#2196F3,#64B5F6);">
+            <h3>📈 Investment Performance Report</h3>
+            <p>Profit/loss and return % for every investment, with overall portfolio ROI.</p>
+        </a>
+        <a href="/reports/goals" class="report-card" style="background:linear-gradient(135deg,#4CAF50,#81C784);">
+            <h3>🎯 Goal Progress Report</h3>
+            <p>Progress toward every financial goal, with amounts saved and remaining.</p>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>

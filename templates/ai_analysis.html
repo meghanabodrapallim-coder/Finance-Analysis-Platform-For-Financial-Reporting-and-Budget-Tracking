@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - AI Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Loading Spinner -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<!-- Navigation -->
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">🏠 Dashboard</a>
+    <a href="/add_expense">💸 Expenses</a>
+    <a href="/budget">📋 Budget</a>
+    <a href="/investments">📈 Investments</a>
+    <a href="/goals">🎯 Goals</a>
+    <a href="/wallets">Wallets</a>
+    <a href="/bills">Bills & Calendar</a>
+    <a href="/subscriptions">Subscriptions</a>
+    <a href="/analytics">📊 Analytics</a>
+    <a href="/spending_analysis">🔍 Spending</a>
+    <a href="/challenges">Challenges</a>
+    <a href="/spending_personality">Spending Personality</a>
+    <a href="/simulator">What-If Simulator</a>
+    <a href="/budget_recommendations">💡 Reco</a>
+    <a href="/health_score">❤️ Health</a>
+    <a href="/notifications">🔔 Alerts</a>
+    <a href="/ai_insights">🧠 AI Insights</a>
+    <a href="/intelligence_dashboard">⚡ Intel</a>
+    <a href="/logout">🚪 Logout</a>
+</nav>
+
+<div class="container">
+    <p class="page-title">AI Spending Analysis</p>
+    <p class="subtitle">Smart insights for better finances</p>
+
+    <div class="two-col">
+        <!-- AI Insight Card -->
+        <div class="card">
+            <h3>🧠 AI Financial Insight</h3>
+            <br>
+
+            {% if status == "good" %}
+            <div class="success-msg">
+                ✅ {{ message }}
+            </div>
+            {% else %}
+            <div class="error-msg">
+                ❌ {{ message }}
+            </div>
+            {% endif %}
+
+            <p style="margin:15px 0;">
+                <b>Suggested Action:</b><br>
+                {{ suggestion }}
+            </p>
+
+            <hr style="margin:15px 0;">
+
+            <h3>📊 Spending Summary</h3>
+            <br>
+            <p style="line-height:2.2; color:#555;">
+                • Highest Expense Category: 
+                  <b>{{ highest_cat }} 
+                  (₹{{ highest_amt }})</b><br>
+                • Total Savings This Month: 
+                  <b>₹{{ savings }}</b><br>
+                • You are saving 
+                  <b>{{ 100 - percentage }}%</b> 
+                  of your income.
+            </p>
+
+            <br>
+            {% if status == "good" %}
+            <div class="success-msg">
+                💡 Keep it up! You are on the right 
+                track to achieve your financial goals.
+            </div>
+            {% else %}
+            <div class="error-msg">
+                💡 Review your expenses and cut down 
+                on unnecessary spending.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Financial Health Score -->
+        <div class="card" style="text-align:center;">
+            <h3>Financial Health Score</h3>
+            <br><br>
+            <div class="health-score">{{ health_score }}</div>
+            <p style="font-size:18px; color:#888;">/ 100</p>
+            <br>
+            <div class="health-label">
+                Status: 
+                {% if health_score >= 60 %}
+                ✅ Good
+                {% else %}
+                ❌ Needs Improvement
+                {% endif %}
+            </div>
+            <br><br>
+            <table>
+                <tr>
+                    <th>Monthly Income</th>
+                    <td>₹{{ monthly_income }}</td>
+                </tr>
+                <tr>
+                    <th>Total Expenses</th>
+                    <td>₹{{ total_expenses }}</td>
+                </tr>
+                <tr>
+                    <th>Spending %</th>
+                    <td>{{ percentage }}%</td>
+                </tr>
+                <tr>
+                    <th>Savings</th>
+                    <td>₹{{ savings }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+<!-- Dark Mode Toggle -->
+<button class="dark-toggle" 
+        onclick="toggleDark()" 
+        id="darkBtn">🌙</button>
+<script>
+// Loading Spinner
+window.addEventListener('load', function() {
+    document.getElementById('loading-overlay')
+        .style.display = 'none';
+});
+
+// Dark Mode
+function toggleDark() {
+    document.body.classList.toggle('dark-mode');
+    const btn = document.getElementById('darkBtn');
+    if (document.body.classList.contains('dark-mode')) {
+        btn.textContent = '☀️';
+        localStorage.setItem('darkMode', 'on');
+    } else {
+        btn.textContent = '🌙';
+        localStorage.setItem('darkMode', 'off');
+    }
+}
+
+// Remember dark mode on reload
+if (localStorage.getItem('darkMode') === 'on') {
+    document.body.classList.add('dark-mode');
+    document.getElementById('darkBtn').textContent = '☀️';
+}
+
+// Animated Number Counters
+function animateCounter(element, target, prefix) {
+    let start = 0;
+    const duration = 1500;
+    const step = target / (duration / 16);
+    const timer = setInterval(function() {
+        start += step;
+        if (start >= target) {
+            start = target;
+            clearInterval(timer);
+        }
+        element.textContent = prefix +
+            Math.floor(start).toLocaleString('en-IN');
+    }, 16);
+}
+
+window.addEventListener('load', function() {
+    document.querySelectorAll('.stat-card p')
+        .forEach(function(el) {
+            const text = el.textContent.trim();
+            if (text.startsWith('₹')) {
+                const num = parseFloat(
+                    text.replace('₹','').replace(/,/g,'')
+                );
+                if (!isNaN(num)) {
+                    animateCounter(el, num, '₹');
+                }
+            } else if (text.endsWith('%')) {
+                const num = parseFloat(text.replace('%',''));
+                if (!isNaN(num)) {
+                    const timer = setInterval(function() {
+                        // handled separately
+                    }, 16);
+                }
+            }
+        });
+});
+</script>
+</body>
+</html>

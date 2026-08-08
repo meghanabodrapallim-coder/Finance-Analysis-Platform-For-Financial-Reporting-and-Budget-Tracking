@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - What-If Simulator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .slider-container { margin: 20px 0; }
+        input[type=range] { width: 100%; margin: 10px 0; }
+        .result-box {
+            background: linear-gradient(135deg, #2196F3, #64B5F6);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .result-number { font-size: 36px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/add_expense">Expenses</a>
+    <a href="/budget">Budget</a>
+    <a href="/investments">Investments</a>
+    <a href="/goals">Goals</a>
+    <a href="/wallets">Wallets</a>
+    <a href="/bills">Bills & Calendar</a>
+    <a href="/subscriptions">Subscriptions</a>
+    <a href="/challenges">Challenges</a>
+    <a href="/spending_personality">Spending Personality</a>
+    <a href="/simulator">What-If Simulator</a>
+    <a href="/analytics">Analytics</a>
+    <a href="/ai_analysis">AI Analysis</a>
+    <a href="/profile">Profile</a>
+    <a href="/settings">Settings</a>
+
+    <div class="nav-profile">
+        <div class="profile-avatar">{{ session['user_name'][0] | upper }}</div>
+        <div class="profile-info">
+            <span class="profile-name">{{ session['user_name'] }}</span>
+            <a href="/logout" class="profile-logout">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <p class="page-title">What-If Financial Simulator</p>
+    <p class="subtitle">See how small changes in saving or spending affect your future</p>
+
+    <div class="two-col">
+        <div class="card">
+            <h3>Your Current Numbers</h3>
+            <p><b>Monthly Income:</b> ₹{{ "{:,.2f}".format(monthly_income) }}</p>
+            <p><b>Monthly Expenses:</b> ₹{{ "{:,.2f}".format(total_expenses) }}</p>
+            <p><b>Current Monthly Savings:</b> ₹{{ "{:,.2f}".format(current_savings) }}</p>
+
+            <div class="slider-container">
+                <label>What if you saved <span id="extraLabel">₹0</span> more per month?</label>
+                <input type="range" id="extraSlider" min="0" max="20000" step="500" value="0">
+            </div>
+
+            <div class="slider-container">
+                <label>Over how many months?</label>
+                <input type="range" id="monthsSlider" min="1" max="60" step="1" value="12">
+                <div>Duration: <span id="monthsLabel">12</span> months</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="result-box">
+                <div>Projected Total Savings</div>
+                <div class="result-number" id="projectedTotal">₹0</div>
+                <div id="projectedSubtext"></div>
+            </div>
+            <canvas id="simChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    const currentSavings = {{ current_savings }};
+    const extraSlider = document.getElementById('extraSlider');
+    const monthsSlider = document.getElementById('monthsSlider');
+    const extraLabel = document.getElementById('extraLabel');
+    const monthsLabel = document.getElementById('monthsLabel');
+    const projectedTotal = document.getElementById('projectedTotal');
+    const projectedSubtext = document.getElementById('projectedSubtext');
+
+    let chart;
+
+    function formatRupees(n) {
+        return '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+    }
+
+    function update() {
+        const extra = parseInt(extraSlider.value);
+        const months = parseInt(monthsSlider.value);
+        extraLabel.textContent = formatRupees(extra);
+        monthsLabel.textContent = months;
+
+        const newMonthlySavings = currentSavings + extra;
+        const labels = [];
+        const baselineData = [];
+        const newData = [];
+
+        for (let m = 1; m <= months; m++) {
+            labels.push('M' + m);
+            baselineData.push(Math.round(currentSavings * m));
+            newData.push(Math.round(newMonthlySavings * m));
+        }
+
+        const finalTotal = newMonthlySavings * months;
+        const extraGained = extra * months;
+
+        projectedTotal.textContent = formatRupees(finalTotal);
+        projectedSubtext.textContent = extra > 0
+            ? ('That is ' + formatRupees(extraGained) + ' more than your current path')
+            : 'Adjust the sliders above to see the difference';
+
+        if (chart) {
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = baselineData;
+            chart.data.datasets[1].data = newData;
+            chart.update();
+        } else {
+            const ctx = document.getElementById('simChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Current Path',
+                            data: baselineData,
+                            borderColor: '#9E9E9E',
+                            backgroundColor: 'transparent',
+                            tension: 0.2
+                        },
+                        {
+                            label: 'With Extra Savings',
+                            data: newData,
+                            borderColor: '#4CAF50',
+                            backgroundColor: 'transparent',
+                            tension: 0.2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+    }
+
+    extraSlider.addEventListener('input', update);
+    monthsSlider.addEventListener('input', update);
+    update();
+</script>
+
+</body>
+</html>

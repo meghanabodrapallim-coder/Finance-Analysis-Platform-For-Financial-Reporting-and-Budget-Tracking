@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - Wallets</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/add_expense">Expenses</a>
+    <a href="/budget">Budget</a>
+    <a href="/investments">Investments</a>
+    <a href="/goals">Goals</a>
+    <a href="/wallets">Wallets</a>
+    <a href="/bills">Bills & Calendar</a>
+    <a href="/subscriptions">Subscriptions</a>
+    <a href="/challenges">Challenges</a>
+    <a href="/spending_personality">Spending Personality</a>
+    <a href="/simulator">What-If Simulator</a>
+    <a href="/analytics">Analytics</a>
+    <a href="/ai_analysis">AI Analysis</a>
+    <a href="/profile">Profile</a>
+    <a href="/settings">Settings</a>
+
+    <div class="nav-profile">
+        <div class="profile-avatar">{{ session['user_name'][0] | upper }}</div>
+        <div class="profile-info">
+            <span class="profile-name">{{ session['user_name'] }}</span>
+            <a href="/logout" class="profile-logout">Logout</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <p class="page-title">Wallets & Accounts</p>
+    <p class="subtitle">Track balances across bank accounts, cash, cards, and UPI</p>
+
+    {% if message %}
+    <div class="success-msg">✅ {{ message }}</div>
+    {% endif %}
+
+    <div class="card">
+        <h3>Total Balance Across All Wallets</h3>
+        <p style="font-size:28px; font-weight:bold; color:#4CAF50;">₹{{ "{:,.2f}".format(total_balance) }}</p>
+    </div>
+
+    <div class="two-col">
+        <div class="card">
+            <h3>Add New Wallet</h3>
+            <form method="POST" action="/wallets">
+                <label>Wallet Name</label>
+                <input type="text" name="wallet_name" placeholder="e.g. HDFC Savings" required>
+
+                <label>Wallet Type</label>
+                <select name="wallet_type" required>
+                    <option value="Bank Account">Bank Account</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Credit Card">Credit Card</option>
+                    <option value="UPI">UPI</option>
+                    <option value="Other">Other</option>
+                </select>
+
+                <label>Current Balance (₹)</label>
+                <input type="number" name="balance" placeholder="10000" required>
+
+                <button class="btn-green" type="submit">Add Wallet</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>Your Wallets</h3>
+            {% if wallets %}
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Balance</th>
+                    <th>Actions</th>
+                </tr>
+                {% for w in wallets %}
+                <tr>
+                    <td><b>{{ w['wallet_name'] }}</b></td>
+                    <td>{{ w['wallet_type'] }}</td>
+                    <td style="color:#4CAF50; font-weight:bold;">₹{{ "{:,.2f}".format(w['balance']) }}</td>
+                    <td>
+                        <a href="/edit_wallet/{{ w['id'] }}"
+                           style="color:#2196F3; font-weight:bold; text-decoration:none; margin-right:10px;">✏️ Edit</a>
+                        <a href="/delete_wallet/{{ w['id'] }}"
+                           onclick="return confirm('Delete this wallet?');"
+                           style="color:#f44336; font-weight:bold; text-decoration:none;">🗑️ Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% else %}
+            <p style="color:#888;">No wallets added yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

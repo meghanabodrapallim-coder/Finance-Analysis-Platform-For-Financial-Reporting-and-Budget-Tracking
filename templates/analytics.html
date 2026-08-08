@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - Portfolio Analytics</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .progress-bar-bg {
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            height: 12px;
+            width: 100%;
+            margin-top: 5px;
+        }
+        .progress-bar-fill {
+            height: 12px;
+            border-radius: 10px;
+            background-color: #4CAF50;
+        }
+        .risk-card {
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .risk-green  { background:#d4edda; color:#155724; }
+        .risk-orange { background:#fff3cd; color:#856404; }
+        .risk-red    { background:#f8d7da; color:#721c24; }
+    </style>
+</head>
+<body>
+    <!-- Loading Spinner -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">🏠 Dashboard</a>
+    <a href="/add_expense">💸 Expenses</a>
+    <a href="/budget">📋 Budget</a>
+    <a href="/investments">📈 Investments</a>
+    <a href="/goals">🎯 Goals</a>
+    <a href="/analytics">📊 Analytics</a>
+    <a href="/spending_analysis">🔍 Spending</a>
+    <a href="/budget_recommendations">💡 Reco</a>
+    <a href="/health_score">❤️ Health</a>
+    <a href="/notifications">🔔 Alerts</a>
+    <a href="/ai_insights">🧠 AI Insights</a>
+    <a href="/intelligence_dashboard">⚡ Intel</a>
+    <a href="/logout">🚪 Logout</a>
+</nav>
+
+<div class="container">
+    <p class="page-title">Portfolio Analytics Dashboard</p>
+    <p class="subtitle">Complete investment and goal performance overview</p>
+
+    <!-- Portfolio Summary Cards -->
+    <div class="stats-grid">
+        <div class="stat-card green">
+            <h3>Total Invested</h3>
+            <p>₹{{ "{:,.2f}".format(total_invested) }}</p>
+            <span>Portfolio Size</span>
+        </div>
+        <div class="stat-card blue">
+            <h3>Current Value</h3>
+            <p>₹{{ "{:,.2f}".format(total_current) }}</p>
+            <span>Market Value</span>
+        </div>
+        <div class="stat-card
+             {% if profit_loss >= 0 %}green{% else %}red{% endif %}">
+            <h3>Total Profit / Loss</h3>
+            <p style="color:
+               {% if profit_loss >= 0 %}#4CAF50{% else %}#f44336{% endif %};">
+                {% if profit_loss >= 0 %}+{% endif %}
+                ₹{{ "{:,.2f}".format(profit_loss) }}
+            </p>
+            <span>Overall P&L</span>
+        </div>
+        <div class="stat-card orange">
+            <h3>Overall ROI</h3>
+            <p style="color:#FF9800;">{{ roi }}%</p>
+            <span>Return on Investment</span>
+        </div>
+    </div>
+
+    <!-- Risk Score -->
+    <div class="risk-card risk-{{ risk_color }}">
+        📊 Portfolio Risk Analysis: {{ risk_score }}
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="two-col">
+        <div class="card">
+            <h3>Asset Allocation</h3>
+            <canvas id="assetPie"></canvas>
+        </div>
+        <div class="card">
+            <h3>Invested vs Current Value</h3>
+            <canvas id="portfolioBar"></canvas>
+        </div>
+    </div>
+
+    <!-- Top and Lowest Performers -->
+    <div class="two-col">
+        <div class="card">
+            <h3>🏆 Top Performing Assets</h3>
+            {% if top_performers %}
+            <table>
+                <tr>
+                    <th>Investment</th>
+                    <th>Asset</th>
+                    <th>Return %</th>
+                    <th>Profit/Loss</th>
+                </tr>
+                {% for inv in top_performers %}
+                <tr>
+                    <td><b>{{ inv.name }}</b></td>
+                    <td>{{ inv.asset }}</td>
+                    <td style="color:#4CAF50; font-weight:bold;">
+                        {{ inv.ret }}%
+                    </td>
+                    <td style="color:#4CAF50; font-weight:bold;">
+                        +₹{{ "{:,.2f}".format(inv.pl) }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% else %}
+            <p style="color:#888;">No investments yet.</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h3>📉 Lowest Performing Assets</h3>
+            {% if low_performers %}
+            <table>
+                <tr>
+                    <th>Investment</th>
+                    <th>Asset</th>
+                    <th>Return %</th>
+                    <th>Profit/Loss</th>
+                </tr>
+                {% for inv in low_performers %}
+                <tr>
+                    <td><b>{{ inv.name }}</b></td>
+                    <td>{{ inv.asset }}</td>
+                    <td style="color:#f44336; font-weight:bold;">
+                        {{ inv.ret }}%
+                    </td>
+                    <td style="color:#f44336; font-weight:bold;">
+                        ₹{{ "{:,.2f}".format(inv.pl) }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% else %}
+            <p style="color:#888;">No investments yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Goal Progress Chart -->
+    <div class="card">
+        <h3>Financial Goal Progress</h3>
+        {% if goals_data %}
+        <canvas id="goalChart" height="80"></canvas>
+        <br>
+        <table>
+            <tr>
+                <th>Goal</th>
+                <th>Target</th>
+                <th>Saved</th>
+                <th>Progress</th>
+                <th>Status</th>
+            </tr>
+            {% for g in goals_data %}
+            <tr>
+                <td><b>{{ g.goal_name }}</b></td>
+                <td>₹{{ "{:,.2f}".format(g.target_amount) }}</td>
+                <td style="color:#4CAF50; font-weight:bold;">
+                    ₹{{ "{:,.2f}".format(g.saved_amount) }}
+                </td>
+                <td style="width:200px;">
+                    {{ g.percentage }}%
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill"
+                             style="width:{{ [g.percentage,100]|min }}%;">
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    {% if g.percentage >= 100 %}
+                    <span style="color:#4CAF50; font-weight:bold;">
+                        ✅ Completed
+                    </span>
+                    {% else %}
+                    <span style="color:#FF9800; font-weight:bold;">
+                        🔄 In Progress
+                    </span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p style="color:#888; text-align:center; padding:20px;">
+            No goals added yet.
+            <a href="/goals">Add your first goal</a>
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- Goals Summary Cards -->
+    <div class="two-col">
+        <div class="stat-card blue"
+             style="padding:20px; border-radius:10px;
+                    background:white;
+                    box-shadow:0 2px 10px rgba(0,0,0,0.08);">
+            <h3>Total Goals</h3>
+            <p>{{ total_goals }}</p>
+        </div>
+        <div class="stat-card green"
+             style="padding:20px; border-radius:10px;
+                    background:white;
+                    box-shadow:0 2px 10px rgba(0,0,0,0.08);">
+            <h3>Goals Completed</h3>
+            <p>{{ completed }} / {{ total_goals }}</p>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- Chart Scripts -->
+<script>
+    // Asset Allocation Pie
+    const pieCtx = document
+        .getElementById('assetPie').getContext('2d');
+    new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ asset_labels | tojson }},
+            datasets: [{
+                data: {{ asset_amounts | tojson }},
+                backgroundColor: [
+                    '#4CAF50','#2196F3','#FF9800',
+                    '#f44336','#9C27B0','#00BCD4','#FF5722'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'right' } }
+        }
+    });
+
+    // Portfolio Bar Chart
+    const barCtx = document
+        .getElementById('portfolioBar').getContext('2d');
+    new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Portfolio'],
+            datasets: [
+                {
+                    label: 'Total Invested',
+                    data: [{{ total_invested }}],
+                    backgroundColor: '#2196F3'
+                },
+                {
+                    label: 'Current Value',
+                    data: [{{ total_current }}],
+                    backgroundColor: '#4CAF50'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    // Goal Progress Bar Chart
+    const goalCtx = document
+        .getElementById('goalChart').getContext('2d');
+    new Chart(goalCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ goal_labels | tojson }},
+            datasets: [
+                {
+                    label: 'Saved Amount',
+                    data: {{ goal_saved | tojson }},
+                    backgroundColor: '#4CAF50'
+                },
+                {
+                    label: 'Target Amount',
+                    data: {{ goal_target | tojson }},
+                    backgroundColor: '#e0e0e0'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+</script>
+<!-- Dark Mode Toggle -->
+<button class="dark-toggle" 
+        onclick="toggleDark()" 
+        id="darkBtn">🌙</button>
+<script>
+// Loading Spinner
+window.addEventListener('load', function() {
+    document.getElementById('loading-overlay')
+        .style.display = 'none';
+});
+
+// Dark Mode
+function toggleDark() {
+    document.body.classList.toggle('dark-mode');
+    const btn = document.getElementById('darkBtn');
+    if (document.body.classList.contains('dark-mode')) {
+        btn.textContent = '☀️';
+        localStorage.setItem('darkMode', 'on');
+    } else {
+        btn.textContent = '🌙';
+        localStorage.setItem('darkMode', 'off');
+    }
+}
+
+// Remember dark mode on reload
+if (localStorage.getItem('darkMode') === 'on') {
+    document.body.classList.add('dark-mode');
+    document.getElementById('darkBtn').textContent = '☀️';
+}
+
+// Animated Number Counters
+function animateCounter(element, target, prefix) {
+    let start = 0;
+    const duration = 1500;
+    const step = target / (duration / 16);
+    const timer = setInterval(function() {
+        start += step;
+        if (start >= target) {
+            start = target;
+            clearInterval(timer);
+        }
+        element.textContent = prefix +
+            Math.floor(start).toLocaleString('en-IN');
+    }, 16);
+}
+
+window.addEventListener('load', function() {
+    document.querySelectorAll('.stat-card p')
+        .forEach(function(el) {
+            const text = el.textContent.trim();
+            if (text.startsWith('₹')) {
+                const num = parseFloat(
+                    text.replace('₹','').replace(/,/g,'')
+                );
+                if (!isNaN(num)) {
+                    animateCounter(el, num, '₹');
+                }
+            } else if (text.endsWith('%')) {
+                const num = parseFloat(text.replace('%',''));
+                if (!isNaN(num)) {
+                    const timer = setInterval(function() {
+                        // handled separately
+                    }, 16);
+                }
+            }
+        });
+});
+</script>
+
+</body>
+</html>

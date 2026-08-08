@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - Investments</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Loading Spinner -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">🏠 Dashboard</a>
+    <a href="/add_expense">💸 Expenses</a>
+    <a href="/budget">📋 Budget</a>
+    <a href="/investments">📈 Investments</a>
+    <a href="/goals">🎯 Goals</a>
+    <a href="/analytics">📊 Analytics</a>
+    <a href="/spending_analysis">🔍 Spending</a>
+    <a href="/budget_recommendations">💡 Reco</a>
+    <a href="/health_score">❤️ Health</a>
+    <a href="/notifications">🔔 Alerts</a>
+    <a href="/ai_insights">🧠 AI Insights</a>
+    <a href="/intelligence_dashboard">⚡ Intel</a>
+    <a href="/logout">🚪 Logout</a>
+</nav>
+
+<div class="container">
+    <p class="page-title">Investment Portfolio Management</p>
+    <p class="subtitle">Track, analyze and grow your investments</p>
+
+    {% if message %}
+    <div class="success-msg">✅ {{ message }}</div>
+    {% endif %}
+
+    <!-- Add Form + Summary Cards -->
+    <div class="two-col">
+        <div class="card">
+            <h3>Add New Investment</h3>
+            <form method="POST" action="/investments">
+                <label>Asset Type</label>
+                <select name="asset" required>
+                    <option value="">Select Asset Type</option>
+                    <option>Stocks</option>
+                    <option>Mutual Fund</option>
+                    <option>Fixed Deposit</option>
+                    <option>Gold</option>
+                    <option>Bonds</option>
+                    <option>Real Estate</option>
+                </select>
+                <label>Investment Name</label>
+                <input type="text" name="name"
+                       placeholder="e.g. Tata Motors" required>
+                <label>Invested Amount (₹)</label>
+                <input type="number" name="invested"
+                       placeholder="100000" required>
+                <label>Current Value (₹)</label>
+                <input type="number" name="current"
+                       placeholder="125000" required>
+                <button class="btn-green" type="submit">
+                    Add Investment
+                </button>
+            </form>
+        </div>
+
+        <!-- Summary Cards -->
+        <div>
+            <div class="stat-card green"
+                 style="margin-bottom:15px; padding:20px;
+                        border-radius:10px; background:white;
+                        box-shadow:0 2px 10px rgba(0,0,0,0.08);">
+                <h3>Total Invested</h3>
+                <p>₹{{ "{:,.2f}".format(total_invested) }}</p>
+            </div>
+            <div class="stat-card blue"
+                 style="margin-bottom:15px; padding:20px;
+                        border-radius:10px; background:white;
+                        box-shadow:0 2px 10px rgba(0,0,0,0.08);">
+                <h3>Current Portfolio Value</h3>
+                <p>₹{{ "{:,.2f}".format(total_current) }}</p>
+            </div>
+            <div class="stat-card
+                 {% if profit_loss >= 0 %}green{% else %}red{% endif %}"
+                 style="margin-bottom:15px; padding:20px;
+                        border-radius:10px; background:white;
+                        box-shadow:0 2px 10px rgba(0,0,0,0.08);">
+                <h3>Total Profit / Loss</h3>
+                <p style="color:
+                   {% if profit_loss >= 0 %}#4CAF50{% else %}#f44336{% endif %};">
+                    {% if profit_loss >= 0 %}+{% endif %}
+                    ₹{{ "{:,.2f}".format(profit_loss) }}
+                </p>
+            </div>
+            <div class="stat-card orange"
+                 style="padding:20px; border-radius:10px;
+                        background:white;
+                        box-shadow:0 2px 10px rgba(0,0,0,0.08);">
+                <h3>Overall ROI</h3>
+                <p style="color:#FF9800;">{{ roi }}%</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asset Allocation Charts -->
+    <div class="two-col">
+        <div class="card">
+            <h3>Asset Allocation</h3>
+            <canvas id="allocationPie"></canvas>
+        </div>
+        <div class="card">
+            <h3>Invested vs Current Value</h3>
+            <canvas id="comparisonBar"></canvas>
+        </div>
+    </div>
+
+    <!-- Asset Allocation Table -->
+    <div class="card">
+        <h3>Asset Allocation Breakdown</h3>
+        {% if asset_labels %}
+        <table>
+            <tr>
+                <th>Asset Type</th>
+                <th>Amount Invested</th>
+                <th>Allocation %</th>
+            </tr>
+            {% for i in range(asset_labels|length) %}
+            <tr>
+                <td><b>{{ asset_labels[i] }}</b></td>
+                <td>₹{{ "{:,.2f}".format(asset_amounts[i]) }}</td>
+                <td>
+                    {% if total_invested > 0 %}
+                    {{ ((asset_amounts[i] / total_invested) * 100) | round(1) }}%
+                    {% else %}0%{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% endif %}
+    </div>
+
+    <!-- Investment Table -->
+    <div class="card">
+        <h3>Investment Summary</h3>
+        {% if investments %}
+        <table>
+            <tr>
+                <th>Asset Type</th>
+                <th>Investment Name</th>
+                <th>Invested Amount</th>
+                <th>Current Value</th>
+                <th>Profit / Loss</th>
+                <th>Return %</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+            {% for inv in investments %}
+            {% set pl = inv['current_value'] - inv['invested_amount'] %}
+            {% set ret = ((pl / inv['invested_amount']) * 100)|round(2) %}
+            <tr>
+                <td>{{ inv['asset'] }}</td>
+                <td><b>{{ inv['investment_name'] }}</b></td>
+                <td>₹{{ "{:,.2f}".format(inv['invested_amount']) }}</td>
+                <td>₹{{ "{:,.2f}".format(inv['current_value']) }}</td>
+                <td style="font-weight:bold;
+                    color:{% if pl >= 0 %}#4CAF50{% else %}#f44336{% endif %};">
+                    {% if pl >= 0 %}+{% endif %}
+                    ₹{{ "{:,.2f}".format(pl) }}
+                </td>
+                <td style="font-weight:bold;
+                    color:{% if ret >= 0 %}#4CAF50{% else %}#f44336{% endif %};">
+                    {{ ret }}%
+                </td>
+                <td>
+                    {% if pl >= 0 %}
+                    <span style="color:#4CAF50; font-weight:bold;">
+                        ✅ Profit
+                    </span>
+                    {% else %}
+                    <span style="color:#f44336; font-weight:bold;">
+                        ❌ Loss
+                    </span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/edit_investment/{{ inv['id'] }}"
+                       style="color:#2196F3; font-weight:bold; text-decoration:none; margin-right:10px;">✏️ Edit</a>
+                    <a href="/delete_investment/{{ inv['id'] }}"
+                       onclick="return confirm('Delete this investment?');"
+                       style="color:#f44336; font-weight:bold; text-decoration:none;">🗑️ Delete</a>
+                </td>
+            </tr>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p style="color:#888; text-align:center; padding:20px;">
+            No investments added yet!
+        </p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Charts -->
+<script>
+    // Asset Allocation Pie Chart
+    const pieCtx = document
+        .getElementById('allocationPie').getContext('2d');
+    new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ asset_labels | tojson }},
+            datasets: [{
+                data: {{ asset_amounts | tojson }},
+                backgroundColor: [
+                    '#4CAF50','#2196F3','#FF9800',
+                    '#f44336','#9C27B0','#00BCD4','#FF5722'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'right' } }
+        }
+    });
+
+    // Invested vs Current Bar Chart
+    const barCtx = document
+        .getElementById('comparisonBar').getContext('2d');
+    new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Portfolio'],
+            datasets: [
+                {
+                    label: 'Total Invested',
+                    data: [{{ total_invested }}],
+                    backgroundColor: '#2196F3'
+                },
+                {
+                    label: 'Current Value',
+                    data: [{{ total_current }}],
+                    backgroundColor: '#4CAF50'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+</script>
+<!-- Dark Mode Toggle -->
+<button class="dark-toggle" 
+        onclick="toggleDark()" 
+        id="darkBtn">🌙</button>
+<script>
+// Loading Spinner
+window.addEventListener('load', function() {
+    document.getElementById('loading-overlay')
+        .style.display = 'none';
+});
+
+// Dark Mode
+function toggleDark() {
+    document.body.classList.toggle('dark-mode');
+    const btn = document.getElementById('darkBtn');
+    if (document.body.classList.contains('dark-mode')) {
+        btn.textContent = '☀️';
+        localStorage.setItem('darkMode', 'on');
+    } else {
+        btn.textContent = '🌙';
+        localStorage.setItem('darkMode', 'off');
+    }
+}
+
+// Remember dark mode on reload
+if (localStorage.getItem('darkMode') === 'on') {
+    document.body.classList.add('dark-mode');
+    document.getElementById('darkBtn').textContent = '☀️';
+}
+
+// Animated Number Counters
+function animateCounter(element, target, prefix) {
+    let start = 0;
+    const duration = 1500;
+    const step = target / (duration / 16);
+    const timer = setInterval(function() {
+        start += step;
+        if (start >= target) {
+            start = target;
+            clearInterval(timer);
+        }
+        element.textContent = prefix +
+            Math.floor(start).toLocaleString('en-IN');
+    }, 16);
+}
+
+window.addEventListener('load', function() {
+    document.querySelectorAll('.stat-card p')
+        .forEach(function(el) {
+            const text = el.textContent.trim();
+            if (text.startsWith('₹')) {
+                const num = parseFloat(
+                    text.replace('₹','').replace(/,/g,'')
+                );
+                if (!isNaN(num)) {
+                    animateCounter(el, num, '₹');
+                }
+            } else if (text.endsWith('%')) {
+                const num = parseFloat(text.replace('%',''));
+                if (!isNaN(num)) {
+                    const timer = setInterval(function() {
+                        // handled separately
+                    }, 16);
+                }
+            }
+        });
+});
+</script>
+</body>
+</html>

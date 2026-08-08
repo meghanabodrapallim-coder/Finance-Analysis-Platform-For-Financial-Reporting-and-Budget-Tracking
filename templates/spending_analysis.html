@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - Spending Analysis</title>
+    <link rel="stylesheet" 
+          href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .status-high   { color:#f44336; font-weight:bold; }
+        .status-medium { color:#FF9800; font-weight:bold; }
+        .status-low    { color:#4CAF50; font-weight:bold; }
+
+        .insight-box {
+            display:flex;
+            align-items:flex-start;
+            gap:15px;
+            padding:15px;
+            border-radius:8px;
+            background:#f8f9fa;
+            margin-bottom:15px;
+        }
+        .insight-icon {
+            font-size:28px;
+            min-width:40px;
+            text-align:center;
+        }
+        .insight-title {
+            font-weight:bold;
+            color:#1a1a2e;
+            margin-bottom:4px;
+            font-size:14px;
+        }
+        .insight-text {
+            color:#555;
+            font-size:13px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Spinner -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">🏠 Dashboard</a>
+    <a href="/add_expense">💸 Expenses</a>
+    <a href="/budget">📋 Budget</a>
+    <a href="/investments">📈 Investments</a>
+    <a href="/goals">🎯 Goals</a>
+    <a href="/analytics">📊 Analytics</a>
+    <a href="/spending_analysis">🔍 Spending</a>
+    <a href="/budget_recommendations">💡 Reco</a>
+    <a href="/health_score">❤️ Health</a>
+    <a href="/notifications">🔔 Alerts</a>
+    <a href="/ai_insights">🧠 AI Insights</a>
+    <a href="/intelligence_dashboard">⚡ Intel</a>
+    <a href="/logout">🚪 Logout</a>
+</nav>
+
+<div class="container">
+    <p class="page-title">Spending Pattern Analysis</p>
+    <p class="subtitle">
+        Analyze your spending habits and understand 
+        where your money goes
+    </p>
+
+    <!-- Summary Cards -->
+    <div class="stats-grid">
+        <div class="stat-card red">
+            <h3>Total Expenses</h3>
+            <p>₹{{ "{:,.2f}".format(total_exp) }}</p>
+            <span>This Month</span>
+        </div>
+        <div class="stat-card blue">
+            <h3>Monthly Budget</h3>
+            <p>₹{{ "{:,.2f}".format(total_budget) }}</p>
+            <span>This Month</span>
+        </div>
+        <div class="stat-card 
+             {% if remaining_budget >= 0 %}green{% else %}red{% endif %}">
+            <h3>Remaining Budget</h3>
+            <p style="color:
+               {% if remaining_budget >= 0 %}
+               #4CAF50{% else %}#f44336{% endif %};">
+                ₹{{ "{:,.2f}".format(remaining_budget) }}
+            </p>
+            <span>This Month</span>
+        </div>
+        <div class="stat-card orange">
+            <h3>Highest Spending</h3>
+            <p style="font-size:18px;">{{ highest_cat }}</p>
+            <span>₹{{ "{:,.2f}".format(highest_amt) }} spent</span>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="two-col">
+        <div class="card">
+            <h3>Expenses by Category</h3>
+            <canvas id="catPie" height="250"></canvas>
+        </div>
+        <div class="card">
+            <h3>Monthly Expenses Trend</h3>
+            <canvas id="monthlyBar" height="250"></canvas>
+        </div>
+    </div>
+
+    <!-- Category Table + Insights -->
+    <div class="two-col">
+        <div class="card">
+            <h3>Category Wise Spending</h3>
+            {% if cat_summary %}
+            <table>
+                <tr>
+                    <th>#</th>
+                    <th>Category</th>
+                    <th>Amount</th>
+                    <th>Percentage</th>
+                    <th>Status</th>
+                </tr>
+                {% for cat in cat_summary %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td><b>{{ cat.category }}</b></td>
+                    <td>₹{{ "{:,.2f}".format(cat.amount) }}</td>
+                    <td>{{ cat.percentage }}%</td>
+                    <td class="status-{{ cat.status | lower }}">
+                        {{ cat.status }}
+                    </td>
+                </tr>
+                {% endfor %}
+                <tr style="background:#f5f5f5;">
+                    <td colspan="2"><b>Total</b></td>
+                    <td>
+                        <b>₹{{ "{:,.2f}".format(total_exp) }}</b>
+                    </td>
+                    <td><b>100%</b></td>
+                    <td>—</td>
+                </tr>
+            </table>
+            {% else %}
+            <p style="color:#888; text-align:center; 
+                      padding:20px;">
+                No expenses found. Add expenses to see analysis.
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- Insights -->
+        <div class="card">
+            <h3>Insights & Recommendations</h3>
+            <br>
+
+            <div class="insight-box">
+                <div class="insight-icon">📊</div>
+                <div>
+                    <div class="insight-title">
+                        Top Spending Category
+                    </div>
+                    <div class="insight-text">
+                        You spent the most on
+                        <b>{{ highest_cat }}
+                        (₹{{ "{:,.2f}".format(highest_amt) }})
+                        </b> this month.
+                    </div>
+                </div>
+            </div>
+
+            <div class="insight-box">
+                <div class="insight-icon">🎯</div>
+                <div>
+                    <div class="insight-title">
+                        Budget Utilization
+                    </div>
+                    <div class="insight-text">
+                        You have utilized
+                        <b>{{ budget_utilization }}%</b>
+                        of your monthly budget.
+                        {% if budget_utilization > 100 %}
+                        ❌ You have exceeded your budget!
+                        {% elif budget_utilization > 80 %}
+                        ⚠️ You are close to your limit!
+                        {% else %}
+                        ✅ You are within your budget.
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="insight-box">
+                <div class="insight-icon">💡</div>
+                <div>
+                    <div class="insight-title">
+                        Recommendation
+                    </div>
+                    <div class="insight-text">
+                        {% if highest_cat == 'Food' %}
+                        Try to reduce dining out and Food
+                        expenses by 15% to save more.
+                        {% elif highest_cat == 'Shopping' %}
+                        Limit impulse shopping. Set a weekly
+                        shopping limit.
+                        {% elif highest_cat == 'Travel' %}
+                        Consider carpooling or public transport
+                        to reduce travel expenses.
+                        {% elif highest_cat == 'Bills' %}
+                        Review your subscriptions and cut
+                        unnecessary bills.
+                        {% elif highest_cat == 'Entertainment' %}
+                        Set a monthly entertainment budget
+                        to control spending.
+                        {% else %}
+                        Review spending habits and identify
+                        areas to cut costs.
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% for cat in cat_summary %}
+            {% if cat.status == 'High' %}
+            <div class="insight-box">
+                <div class="insight-icon">⚠️</div>
+                <div>
+                    <div class="insight-title">
+                        High Spending — {{ cat.category }}
+                    </div>
+                    <div class="insight-text">
+                        {{ cat.category }} accounts for
+                        <b>{{ cat.percentage }}%</b>
+                        of total spending. Consider reducing.
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+window.onload = function() {
+
+    // DONUT CHART
+    var catLabels = {{ cat_labels | tojson }};
+    var catAmounts = {{ cat_amounts | tojson }};
+
+    if (catLabels.length > 0) {
+        var pieCtx = document
+            .getElementById('catPie').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: catLabels,
+                datasets: [{
+                    data: catAmounts,
+                    backgroundColor: [
+                        '#4CAF50','#2196F3','#FF9800',
+                        '#f44336','#9C27B0','#00BCD4',
+                        '#FF5722'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '65%',
+                plugins: {
+                    legend: { position: 'right' }
+                }
+            }
+        });
+    }
+
+    // BAR CHART
+    var monthLabels = {{ monthly_labels | tojson }};
+    var monthAmounts = {{ monthly_amounts | tojson }};
+
+    if (monthLabels.length > 0) {
+        var barCtx = document
+            .getElementById('monthlyBar').getContext('2d');
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: monthLabels,
+                datasets: [{
+                    label: 'Monthly Expenses',
+                    data: monthAmounts,
+                    backgroundColor: [
+                        '#4CAF50','#2196F3','#FF9800',
+                        '#f44336','#9C27B0','#00BCD4',
+                        '#FF5722','#795548','#607D8B',
+                        '#E91E63','#CDDC39','#009688'
+                    ],
+                   borderRadius: 8,
+                    borderWidth: 0,
+                    barThickness: 60
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' +
+                                    value.toLocaleString();
+                            }
+                        }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+}
+</script>
+<!-- Dark Mode Toggle -->
+<button class="dark-toggle" 
+        onclick="toggleDark()" 
+        id="darkBtn">🌙</button>
+<script>
+// Loading Spinner
+window.addEventListener('load', function() {
+    document.getElementById('loading-overlay')
+        .style.display = 'none';
+});
+
+// Dark Mode
+function toggleDark() {
+    document.body.classList.toggle('dark-mode');
+    const btn = document.getElementById('darkBtn');
+    if (document.body.classList.contains('dark-mode')) {
+        btn.textContent = '☀️';
+        localStorage.setItem('darkMode', 'on');
+    } else {
+        btn.textContent = '🌙';
+        localStorage.setItem('darkMode', 'off');
+    }
+}
+
+// Remember dark mode on reload
+if (localStorage.getItem('darkMode') === 'on') {
+    document.body.classList.add('dark-mode');
+    document.getElementById('darkBtn').textContent = '☀️';
+}
+
+// Animated Number Counters
+function animateCounter(element, target, prefix) {
+    let start = 0;
+    const duration = 1500;
+    const step = target / (duration / 16);
+    const timer = setInterval(function() {
+        start += step;
+        if (start >= target) {
+            start = target;
+            clearInterval(timer);
+        }
+        element.textContent = prefix +
+            Math.floor(start).toLocaleString('en-IN');
+    }, 16);
+}
+
+window.addEventListener('load', function() {
+    document.querySelectorAll('.stat-card p')
+        .forEach(function(el) {
+            const text = el.textContent.trim();
+            if (text.startsWith('₹')) {
+                const num = parseFloat(
+                    text.replace('₹','').replace(/,/g,'')
+                );
+                if (!isNaN(num)) {
+                    animateCounter(el, num, '₹');
+                }
+            } else if (text.endsWith('%')) {
+                const num = parseFloat(text.replace('%',''));
+                if (!isNaN(num)) {
+                    const timer = setInterval(function() {
+                        // handled separately
+                    }, 16);
+                }
+            }
+        });
+});
+</script>
+</body>
+</html>
