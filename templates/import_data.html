@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - Import Dataset</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .upload-area {
+            border: 3px dashed #4CAF50;
+            border-radius: 15px;
+            padding: 50px;
+            text-align: center;
+            background: #f8fff8;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            background: #e8f5e9;
+            border-color: #2196F3;
+        }
+        .upload-icon { font-size: 60px; margin-bottom: 15px; }
+        .upload-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+        .upload-subtitle { color: #888; font-size: 14px; }
+        .format-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 3px;
+        }
+        .badge-csv { background:#e8f5e9; color:#4CAF50; }
+        .badge-xlsx { background:#e3f2fd; color:#2196F3; }
+        .badge-xls { background:#fff3e0; color:#FF9800; }
+        .col-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            font-size: 12px;
+            margin: 3px;
+            color: #555;
+        }
+        .preview-table {
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+        .stat-row {
+            display: grid;
+            grid-template-columns: repeat(4,1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .mini-stat {
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .mini-stat h4 {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .mini-stat p {
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/dashboard">🏠 Dashboard</a>
+    <a href="/add_expense">💸 Expenses</a>
+    <a href="/import_data">📂 Import Data</a>
+    <a href="/import_analysis">📊 Import Analysis</a>
+    <a href="/ai_insights">🧠 AI Insights</a>
+    <a href="/logout">🚪 Logout</a>
+</nav>
+
+<div class="container">
+    <p class="page-title">📂 Import Financial Dataset</p>
+    <p class="subtitle">
+        Upload your CSV or Excel file to analyze your financial data
+    </p>
+
+    {% if error %}
+    <div class="error-msg">❌ {{ error }}</div>
+    {% endif %}
+
+    {% if message %}
+    <div class="success-msg">✅ {{ message }}</div>
+
+    <!-- Import Stats -->
+    <div class="stat-row">
+        <div class="mini-stat" style="background:#e8f5e9;">
+            <h4>Records Imported</h4>
+            <p style="color:#4CAF50;">{{ stats.rows }}</p>
+        </div>
+        <div class="mini-stat" style="background:#e3f2fd;">
+            <h4>Total Income</h4>
+            <p style="color:#2196F3;">₹{{ "{:,.2f}".format(stats.total_income) }}</p>
+        </div>
+        <div class="mini-stat" style="background:#fce4ec;">
+            <h4>Total Expense</h4>
+            <p style="color:#f44336;">₹{{ "{:,.2f}".format(stats.total_expense) }}</p>
+        </div>
+        <div class="mini-stat" style="background:#fff3e0;">
+            <h4>Net Savings</h4>
+            <p style="color:#FF9800;">₹{{ "{:,.2f}".format(stats.savings) }}</p>
+        </div>
+    </div>
+
+    <div style="text-align:center; margin-bottom:20px;">
+        <a href="/import_analysis"
+           class="btn-green"
+           style="display:inline-block; width:auto;
+                  padding:12px 30px; text-decoration:none;
+                  margin-right:10px;">
+            📊 View Full Analysis
+        </a>
+        <a href="/import_data"
+           class="btn-blue"
+           style="display:inline-block; width:auto;
+                  padding:12px 30px; text-decoration:none;">
+            📂 Upload Another File
+        </a>
+    </div>
+    {% endif %}
+
+    <div class="two-col">
+        <!-- Upload Form -->
+        <div class="card">
+            <h3>📤 Upload Your Dataset</h3>
+            <br>
+            <form method="POST" action="/import_data"
+                  enctype="multipart/form-data">
+
+                <div class="upload-area"
+                     onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📂</div>
+                    <div class="upload-title">
+                        Click to Upload or Drag & Drop
+                    </div>
+                    <div class="upload-subtitle">
+                        Supports CSV, XLSX, XLS files
+                    </div>
+                    <br>
+                    <span class="format-badge badge-csv">CSV</span>
+                    <span class="format-badge badge-xlsx">XLSX</span>
+                    <span class="format-badge badge-xls">XLS</span>
+                </div>
+
+                <input type="file" id="fileInput" name="file"
+                       accept=".csv,.xlsx,.xls"
+                       style="display:none"
+                       onchange="showFileName(this)">
+
+                <p id="fileName"
+                   style="text-align:center; margin:10px 0;
+                          color:#4CAF50; font-weight:bold;">
+                </p>
+
+                <br>
+                <button class="btn-green" type="submit">
+                    🚀 Upload & Analyze
+                </button>
+            </form>
+        </div>
+
+        <!-- Instructions -->
+        <div class="card">
+            <h3>📋 File Format Guide</h3>
+            <br>
+            <p style="color:#555; font-size:13px; margin-bottom:15px;">
+                Your file should have these columns
+                (column names are flexible):
+            </p>
+
+            <div style="margin-bottom:15px;">
+                <b style="font-size:13px; color:#1a1a2e;">
+                    Required Column:
+                </b><br>
+                <span class="col-badge">amount</span>
+                <span class="col-badge">price</span>
+                <span class="col-badge">value</span>
+            </div>
+
+            <div style="margin-bottom:15px;">
+                <b style="font-size:13px; color:#1a1a2e;">
+                    Optional Columns:
+                </b><br>
+                <span class="col-badge">date</span>
+                <span class="col-badge">category</span>
+                <span class="col-badge">description</span>
+                <span class="col-badge">type</span>
+                <span class="col-badge">note</span>
+            </div>
+
+            <hr style="margin:15px 0;">
+
+            <b style="font-size:13px; color:#1a1a2e;">
+                Example CSV format:
+            </b>
+            <div style="background:#f5f5f5; padding:12px;
+                        border-radius:6px; margin-top:8px;
+                        font-size:12px; font-family:monospace;
+                        color:#333; line-height:1.8;">
+                date,category,description,amount,type<br>
+                2026-07-01,Food,Lunch,250,Expense<br>
+                2026-07-02,Travel,Bus fare,50,Expense<br>
+                2026-07-03,Salary,Monthly pay,45000,Income
+            </div>
+
+            <br>
+            <div style="background:#e8f5e9; padding:12px;
+                        border-radius:6px; font-size:12px;
+                        color:#2e7d32;">
+                💡 <b>Tip:</b> The system automatically detects
+                your columns even if they have different names.
+                Just make sure you have an amount/price column!
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showFileName(input) {
+    if (input.files[0]) {
+        document.getElementById('fileName').textContent =
+            '📄 Selected: ' + input.files[0].name;
+    }
+}
+</script>
+
+</body>
+</html>

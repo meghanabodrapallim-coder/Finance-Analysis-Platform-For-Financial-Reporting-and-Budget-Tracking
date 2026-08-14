@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance Insights - Home</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:Arial, sans-serif; }
+
+        /* NAV */
+        nav {
+            background: #1a1a2e;
+            padding: 15px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .nav-logo {
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .nav-logo span { color: #4CAF50; }
+        .nav-links { display: flex; gap: 30px; align-items: center; }
+        .nav-links a {
+            color: #aaa;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: white; }
+        .nav-btn {
+            background: #4CAF50;
+            color: white !important;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold !important;
+        }
+        .nav-btn:hover { background: #45a049 !important; }
+
+        /* HERO */
+        .hero {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 60px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 500px; height: 500px;
+            background: rgba(76,175,80,0.05);
+            border-radius: 50%;
+            top: -100px; left: -100px;
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            width: 400px; height: 400px;
+            background: rgba(33,150,243,0.05);
+            border-radius: 50%;
+            bottom: -100px; right: -100px;
+        }
+        .hero-content { position: relative; z-index: 1; max-width: 800px; }
+        .hero-badge {
+            display: inline-block;
+            background: rgba(76,175,80,0.2);
+            color: #4CAF50;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            border: 1px solid rgba(76,175,80,0.3);
+        }
+        .hero h1 {
+            font-size: 52px;
+            color: white;
+            line-height: 1.2;
+            margin-bottom: 20px;
+        }
+        .hero h1 span { color: #4CAF50; }
+        .hero p {
+            font-size: 18px;
+            color: #aaa;
+            margin-bottom: 40px;
+            line-height: 1.7;
+        }
+        .hero-btns { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 35px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 5px 20px rgba(76,175,80,0.3);
+        }
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76,175,80,0.4);
+        }
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            padding: 15px 35px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+            border: 2px solid rgba(255,255,255,0.3);
+            transition: all 0.3s;
+        }
+        .btn-secondary:hover {
+            border-color: white;
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* STATS */
+        .stats {
+            background: white;
+            padding: 40px 50px;
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .stat-item { text-align: center; }
+        .stat-item h3 { font-size: 32px; color: #1a1a2e; font-weight: bold; }
+        .stat-item h3 span { color: #4CAF50; }
+        .stat-item p { font-size: 13px; color: #888; margin-top: 5px; }
+
+        /* FEATURES */
+        .features {
+            background: #f8f9fa;
+            padding: 80px 50px;
+            text-align: center;
+        }
+        .section-badge {
+            display: inline-block;
+            background: #e8f5e9;
+            color: #4CAF50;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .features h2 {
+            font-size: 36px;
+            color: #1a1a2e;
+            margin-bottom: 10px;
+        }
+        .features > p {
+            color: #888;
+            font-size: 16px;
+            margin-bottom: 50px;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px 25px;
+            text-align: left;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.06);
+            transition: all 0.3s;
+            border-top: 4px solid transparent;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+        }
+        .feature-card:nth-child(1) { border-top-color: #4CAF50; }
+        .feature-card:nth-child(2) { border-top-color: #2196F3; }
+        .feature-card:nth-child(3) { border-top-color: #FF9800; }
+        .feature-card:nth-child(4) { border-top-color: #f44336; }
+        .feature-card:nth-child(5) { border-top-color: #9C27B0; }
+        .feature-card:nth-child(6) { border-top-color: #00BCD4; }
+        .feature-icon {
+            font-size: 36px;
+            margin-bottom: 15px;
+            display: block;
+        }
+        .feature-card h3 {
+            font-size: 17px;
+            color: #1a1a2e;
+            margin-bottom: 10px;
+        }
+        .feature-card p { font-size: 13px; color: #888; line-height: 1.6; }
+
+        /* HOW IT WORKS */
+        .how-it-works {
+            background: white;
+            padding: 80px 50px;
+            text-align: center;
+        }
+        .steps {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 50px;
+            flex-wrap: wrap;
+        }
+        .step {
+            flex: 1;
+            min-width: 200px;
+            max-width: 250px;
+        }
+        .step-num {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #4CAF50, #2196F3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            margin: 0 auto 15px auto;
+        }
+        .step h3 { font-size: 16px; color: #1a1a2e; margin-bottom: 8px; }
+        .step p { font-size: 13px; color: #888; line-height: 1.6; }
+        .step-arrow {
+            font-size: 24px;
+            color: #ddd;
+            align-self: flex-start;
+            margin-top: 20px;
+        }
+
+        /* CTA */
+        .cta {
+            background: linear-gradient(135deg, #1a1a2e, #0f3460);
+            padding: 80px 50px;
+            text-align: center;
+        }
+        .cta h2 { font-size: 36px; color: white; margin-bottom: 15px; }
+        .cta p { color: #aaa; font-size: 16px; margin-bottom: 35px; }
+
+        /* FOOTER */
+        footer {
+            background: #0d0d1a;
+            padding: 30px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        footer p { color: #666; font-size: 13px; }
+        .footer-links { display: flex; gap: 20px; }
+        .footer-links a { color: #666; text-decoration: none; font-size: 13px; }
+        .footer-links a:hover { color: #4CAF50; }
+
+        /* ANIMATIONS */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hero-content { animation: fadeInUp 0.8s ease; }
+    </style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav>
+    <div class="nav-logo">💰 Smart Finance <span>Insights</span></div>
+    <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="/feedback">Feedback</a>
+        <a href="/login">Login</a>
+        <a href="/register" class="nav-btn">Get Started</a>
+    </div>
+</nav>
+
+<!-- HERO SECTION -->
+<section class="hero">
+    <div class="hero-content">
+        <div class="hero-badge">✨ AI-Powered Finance Management</div>
+        <h1>Take Control of Your<br><span>Finances</span> with Smart Insights</h1>
+        <p>Smart Finance Insights is your all-in-one personal finance assistant.<br>
+        Track expenses, plan budgets, manage investments, and get AI-powered<br>
+        recommendations — all in one beautiful dashboard.</p>
+        <div class="hero-btns">
+            <a href="/register" class="btn-primary">🚀 Get Started Free</a>
+            <a href="#features" class="btn-secondary">📖 Learn More</a>
+        </div>
+    </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+    <div class="stat-item">
+        <h3>30<span>+</span></h3>
+        <p>Pages & Modules</p>
+    </div>
+    <div class="stat-item">
+        <h3>7<span>+</span></h3>
+        <p>Database Tables</p>
+    </div>
+    <div class="stat-item">
+        <h3>4<span></span></h3>
+        <p>Milestones Completed</p>
+    </div>
+    <div class="stat-item">
+        <h3>100<span>%</span></h3>
+        <p>Free to Use</p>
+    </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+    <div class="section-badge">FEATURES</div>
+    <h2>Everything You Need to Manage Money</h2>
+    <p>Powerful tools designed to give you complete control over your financial life</p>
+
+    <div class="features-grid">
+        <div class="feature-card">
+            <span class="feature-icon">💰</span>
+            <h3>Expense Tracking</h3>
+            <p>Track every expense by category — Food, Travel, Shopping, Bills, and more. Get instant insights into your spending patterns.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">📊</span>
+            <h3>Financial Analytics</h3>
+            <p>Beautiful interactive charts — pie charts, bar charts, and line charts — give you a clear visual picture of your finances.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">📈</span>
+            <h3>Investment Portfolio</h3>
+            <p>Track Stocks, Mutual Funds, Gold, and FD investments. Auto-calculate profit/loss and ROI for your entire portfolio.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🎯</span>
+            <h3>Budget Management</h3>
+            <p>Set monthly budgets per category. Get instant alerts when you are close to or exceed your spending limits.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🔮</span>
+            <h3>Financial Predictions</h3>
+            <p>AI-powered spending analysis with Financial Health Score out of 100 and personalized recommendations to improve your finances.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🎯</span>
+            <h3>Goal Planning</h3>
+            <p>Set financial goals — Emergency Fund, Vacation, Home Purchase. Track progress with visual progress bars and countdown timers.</p>
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-it-works" id="how-it-works">
+    <div class="section-badge">HOW IT WORKS</div>
+    <h2>Get Started in 4 Simple Steps</h2>
+    <p style="color:#888; font-size:16px; margin-top:10px;">
+        Your financial journey begins here
+    </p>
+
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <h3>Create Account</h3>
+            <p>Register with your name, email, and password in seconds. Your data is completely private and secure.</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <h3>Set Your Income</h3>
+            <p>Enter your monthly income to set the baseline for all your financial calculations and recommendations.</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <h3>Track Expenses</h3>
+            <p>Add your daily expenses by category. The dashboard updates automatically with charts and insights.</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+            <div class="step-num">4</div>
+            <h3>Get AI Insights</h3>
+            <p>Receive your Financial Health Score and personalized AI recommendations to improve your finances.</p>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+    <h2>Ready to Take Control of Your Finances?</h2>
+    <p>Join Smart Finance Insights today and start your journey to financial freedom</p>
+    <a href="/register" class="btn-primary">🚀 Start For Free</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <p>© 2026 Smart Finance Insights | Built by Meghana Bodrapalli</p>
+    <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="#features">Features</a>
+        <a href="/feedback">Feedback</a>
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
+    </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Finance - Feedback</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .star-rating { display:flex; gap:8px; margin-bottom:15px; }
+        .star {
+            font-size: 30px;
+            cursor: pointer;
+            color: #ddd;
+            transition: color 0.2s;
+        }
+        .star.active { color: #FF9800; }
+        .rating-input { display:none; }
+        .feedback-hero {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 60px 30px;
+            text-align: center;
+            color: white;
+        }
+        .feedback-hero h1 { font-size: 36px; margin-bottom: 10px; }
+        .feedback-hero p { color: #aaa; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <span class="nav-brand">💰 Smart Finance Insights</span>
+    <a href="/">🏠 Home</a>
+    <a href="/login">Login</a>
+    <a href="/register">Register</a>
+    {% if session.get('user_name') %}
+    <a href="/dashboard">Dashboard</a>
+    <a href="/logout">Logout</a>
+    {% endif %}
+</nav>
+
+<div class="feedback-hero">
+    <h1>💬 Share Your Feedback</h1>
+    <p>Help us improve Smart Finance Insights with your valuable feedback</p>
+</div>
+
+<div class="container">
+    {% if message %}
+    <br>
+    <div class="success-msg"
+         style="text-align:center; font-size:16px; padding:20px;">
+        🎉 {{ message }} We appreciate your time!
+    </div>
+    <br>
+    <div style="text-align:center;">
+        <a href="/" class="btn-green"
+           style="display:inline-block; width:auto;
+                  padding:12px 30px; text-decoration:none;">
+            🏠 Back to Home
+        </a>
+    </div>
+    {% else %}
+    <br>
+    <div class="two-col">
+        <div class="card">
+            <h3>📝 Your Feedback</h3>
+            <br>
+            <form method="POST" action="/feedback">
+                <label>Your Name</label>
+                <input type="text" name="name"
+                       placeholder="Meghana" required>
+
+                <label>Email Address</label>
+                <input type="email" name="email"
+                       placeholder="meghana@gmail.com" required>
+
+                <label>Rating</label>
+                <div class="star-rating">
+                    <span class="star" onclick="setRating(1)">★</span>
+                    <span class="star" onclick="setRating(2)">★</span>
+                    <span class="star" onclick="setRating(3)">★</span>
+                    <span class="star" onclick="setRating(4)">★</span>
+                    <span class="star" onclick="setRating(5)">★</span>
+                </div>
+                <input type="hidden" name="rating"
+                       id="ratingInput" value="5">
+
+                <label>What do you think about Smart Finance Insights?</label>
+                <textarea name="feedback" rows="5"
+                          placeholder="Share your experience, suggestions, or any issues you faced..."
+                          style="width:100%; padding:10px; border:1px solid #ddd;
+                                 border-radius:6px; font-size:14px;
+                                 resize:vertical;" required></textarea>
+                <br><br>
+                <button class="btn-green" type="submit">
+                    📤 Submit Feedback
+                </button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>💡 Why Your Feedback Matters</h3>
+            <br>
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <div style="display:flex; gap:15px; align-items:flex-start;">
+                    <span style="font-size:28px;">🚀</span>
+                    <div>
+                        <b>Help Us Improve</b>
+                        <p style="color:#888; font-size:13px; margin-top:4px;">
+                            Your suggestions help us add better features and fix issues faster.
+                        </p>
+                    </div>
+                </div>
+                <div style="display:flex; gap:15px; align-items:flex-start;">
+                    <span style="font-size:28px;">🎯</span>
+                    <div>
+                        <b>Shape the Future</b>
+                        <p style="color:#888; font-size:13px; margin-top:4px;">
+                            The features you request become our priority for the next milestone.
+                        </p>
+                    </div>
+                </div>
+                <div style="display:flex; gap:15px; align-items:flex-start;">
+                    <span style="font-size:28px;">💬</span>
+                    <div>
+                        <b>Share Your Experience</b>
+                        <p style="color:#888; font-size:13px; margin-top:4px;">
+                            Tell us what you love and what could be better.
+                        </p>
+                    </div>
+                </div>
+                <div style="display:flex; gap:15px; align-items:flex-start;">
+                    <span style="font-size:28px;">🔒</span>
+                    <div>
+                        <b>100% Confidential</b>
+                        <p style="color:#888; font-size:13px; margin-top:4px;">
+                            Your feedback is only used to improve the application.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function setRating(rating) {
+    document.getElementById('ratingInput').value = rating;
+    document.querySelectorAll('.star').forEach((star, i) => {
+        star.classList.toggle('active', i < rating);
+    });
+}
+setRating(5);
+</script>
+
+</body>
+</html>

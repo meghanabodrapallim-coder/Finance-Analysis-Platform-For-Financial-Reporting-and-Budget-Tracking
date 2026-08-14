@@ -73,6 +73,15 @@ def init_db():
                 priority TEXT,
                 status TEXT,
                 created_date TEXT)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS imported_data
+            (id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            date TEXT,
+            category TEXT,
+            description TEXT,
+            amount REAL,
+            type TEXT,
+            source_file TEXT)''')
     c.execute('''CREATE TABLE IF NOT EXISTS settings
             (id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER UNIQUE,
@@ -158,7 +167,7 @@ def get_full_report_data(user_id):
 
 @app.route('/')
 def home():
-    return redirect(url_for('login'))
+    return render_template('home.html')
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -2994,7 +3003,247 @@ def jarvis_clear():
     return redirect(url_for('jarvis'))
 
 init_db()
+@app.route('/feedback', methods=['GET', 'POST'])
+def feedback():
+    message = None
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        rating = request.form['rating']
+        feedback_text = request.form['feedback']
+        conn = get_db()
+        conn.execute('''CREATE TABLE IF NOT EXISTS feedback
+                    (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT, email TEXT,
+                    rating INTEGER, feedback TEXT,
+                    created_date TEXT)''')
+        from datetime import date
+        conn.execute(
+            "INSERT INTO feedback (name, email, rating, feedback, created_date) VALUES (?, ?, ?, ?, ?)",
+            (name, email, rating, feedback_text, date.today().strftime('%Y-%m-%d')))
+        conn.commit()
+        conn.close()
+        message = "Thank you for your feedback!"
+    return render_template('feedback.html', message=message)
 
+import os
+import pandas as pd
+from werkzeug.utils import secure_filename
+
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls'}
+
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/import_data', methods=['GET', 'POST'])
+def import_data():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user_id = session['user_id']
+    message = None
+    error = None
+    preview_data = []
+    stats = {}
+
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            error = "No file selected!"
+        else:
+            file = request.files['file']
+            if file.filename == '':
+                error = "No file selected!"
+            elif not allowed_file(file.filename):
+                error = "Only CSV, XLSX, and XLS files are allowed!"
+            else:
+                try:
+                    # Read file
+                    if file.filename.endswith('.csv'):
+                        df = pd.read_csv(file)
+                    else:
+                        df = pd.read_excel(file)
+
+                    # Clean column names
+                    df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
+
+                    # Try to find required columns flexibly
+                    col_map = {}
+
+                    # Find date column
+                    for col in df.columns:
+                        if 'date' in col:
+                            col_map['date'] = col
+                            break
+
+                    # Find amount column
+                    for col in df.columns:
+                        if 'amount' in col or 'price' in col or 'value' in col:
+                            col_map['amount'] = col
+                            break
+
+                    # Find category column
+                    for col in df.columns:
+                        if 'category' in col or 'type' in col or 'cat' in col:
+                            col_map['category'] = col
+                            break
+
+                    # Find description column
+                    for col in df.columns:
+                        if 'description' in col or 'desc' in col or 'note' in col or 'detail' in col:
+                            col_map['description'] = col
+                            break
+
+                    # Find income/expense type column
+                    for col in df.columns:
+                        if 'income' in col or 'expense' in col or 'transaction' in col or 'type' in col:
+                            col_map['type'] = col
+                            break
+
+                    if 'amount' not in col_map:
+                        error = "Could not find an amount column. Please ensure your file has a column named 'amount', 'price', or 'value'."
+                    else:
+                        # Clean data
+                        amount_col = col_map['amount']
+                        df[amount_col] = pd.to_numeric(
+                            df[amount_col].astype(str).str.replace('[₹$,]', '', regex=True),
+                            errors='coerce'
+                        )
+                        df = df.dropna(subset=[amount_col])
+                        df = df[df[amount_col] > 0]
+
+                        # Store to database
+                        conn = get_db()
+                        conn.execute(
+                            "DELETE FROM imported_data WHERE user_id=?",
+                            (user_id,))
+
+                        rows_imported = 0
+                        for _, row in df.iterrows():
+                            date = str(row.get(col_map.get('date', ''), '2026-01-01'))[:10]
+                            category = str(row.get(col_map.get('category', ''), 'Others'))
+                            description = str(row.get(col_map.get('description', ''), ''))
+                            amount = float(row[amount_col])
+                            trans_type = str(row.get(col_map.get('type', ''), 'Expense'))
+
+                            # Determine if income or expense
+                            if 'income' in trans_type.lower() or 'credit' in trans_type.lower() or 'salary' in trans_type.lower():
+                                trans_type = 'Income'
+                            else:
+                                trans_type = 'Expense'
+
+                            conn.execute(
+                                "INSERT INTO imported_data (user_id, date, category, description, amount, type, source_file) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                (user_id, date, category, description, amount, trans_type, secure_filename(file.filename)))
+                            rows_imported += 1
+
+                        conn.commit()
+
+                        # Get stats
+                        total_income = df[df[col_map.get('type', '')] .astype(str).str.lower().str.contains('income|credit|salary', na=False)][amount_col].sum() if col_map.get('type') else 0
+                        total_expense = df[amount_col].sum() - total_income if total_income > 0 else df[amount_col].sum()
+
+                        stats = {
+                            'rows': rows_imported,
+                            'total_income': round(total_income, 2),
+                            'total_expense': round(total_expense, 2),
+                            'savings': round(total_income - total_expense, 2),
+                            'columns_found': list(col_map.keys())
+                        }
+
+                        message = f"Successfully imported {rows_imported} records!"
+                        preview_data = df.head(5).to_dict('records')
+                        conn.close()
+
+                except Exception as e:
+                    error = f"Error processing file: {str(e)}"
+
+    return render_template('import_data.html',
+                           message=message,
+                           error=error,
+                           preview_data=preview_data,
+                           stats=stats)
+
+
+@app.route('/import_analysis')
+def import_analysis():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user_id = session['user_id']
+    conn = get_db()
+
+    # All imported records
+    records = conn.execute(
+        "SELECT * FROM imported_data WHERE user_id=? ORDER BY date DESC",
+        (user_id,)).fetchall()
+
+    # Category wise spending
+    cat_data = conn.execute(
+        "SELECT category, SUM(amount) as total FROM imported_data WHERE user_id=? AND type='Expense' GROUP BY category ORDER BY total DESC",
+        (user_id,)).fetchall()
+
+    # Monthly trend
+    monthly_data = conn.execute(
+        "SELECT strftime('%m', date) as month, SUM(amount) as total FROM imported_data WHERE user_id=? AND type='Expense' GROUP BY month ORDER BY month",
+        (user_id,)).fetchall()
+
+    # Income vs Expense
+    income_total = conn.execute(
+        "SELECT SUM(amount) FROM imported_data WHERE user_id=? AND type='Income'",
+        (user_id,)).fetchone()[0] or 0
+
+    expense_total = conn.execute(
+        "SELECT SUM(amount) FROM imported_data WHERE user_id=? AND type='Expense'",
+        (user_id,)).fetchone()[0] or 0
+
+    total_records = len(records)
+    conn.close()
+
+    savings = float(income_total) - float(expense_total)
+    savings_ratio = round((savings / float(income_total)) * 100, 1) if income_total > 0 else 0
+
+    month_names = {
+        '01':'Jan','02':'Feb','03':'Mar',
+        '04':'Apr','05':'May','06':'Jun',
+        '07':'Jul','08':'Aug','09':'Sep',
+        '10':'Oct','11':'Nov','12':'Dec'
+    }
+    monthly_labels = [month_names.get(m['month'], m['month']) for m in monthly_data]
+    monthly_amounts = [float(m['total']) for m in monthly_data]
+
+    cat_labels = [c['category'] for c in cat_data]
+    cat_amounts = [float(c['total']) for c in cat_data]
+
+    # Category summary with percentage
+    cat_summary = []
+    for cat in cat_data:
+        amt = float(cat['total'])
+        pct = round((amt / float(expense_total)) * 100, 1) if expense_total > 0 else 0
+        if pct >= 30:
+            status = 'High'
+        elif pct >= 15:
+            status = 'Medium'
+        else:
+            status = 'Low'
+        cat_summary.append({
+            'category': cat['category'],
+            'amount': amt,
+            'percentage': pct,
+            'status': status
+        })
+
+    return render_template('import_analysis.html',
+                           records=records,
+                           total_records=total_records,
+                           income_total=float(income_total),
+                           expense_total=float(expense_total),
+                           savings=savings,
+                           savings_ratio=savings_ratio,
+                           cat_labels=cat_labels,
+                           cat_amounts=cat_amounts,
+                           cat_summary=cat_summary,
+                           monthly_labels=monthly_labels,
+                           monthly_amounts=monthly_amounts)
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
