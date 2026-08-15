@@ -3038,7 +3038,6 @@ ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls'}
 def allowed_file(filename):
     return '.' in filename and \
         filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 @app.route('/import_data', methods=['GET', 'POST'])
 def import_data():
     if 'user_id' not in session:
@@ -3049,124 +3048,11 @@ def import_data():
     preview_data = []
     stats = {}
 
-    if request.method == 'POST':
-        if 'file' not in request.files:
-            error = "No file selected!"
-        else:
-            file = request.files['file']
-            if file.filename == '':
-                error = "No file selected!"
-            elif not allowed_file(file.filename):
-                error = "Only CSV, XLSX, and XLS files are allowed!"
-            else:
-                try:
-                    # Read file
-                    if file.filename.endswith('.csv'):
-                        df = pd.read_csv(file)
-                    else:
-                        df = pd.read_excel(file)
-
-                    # Clean column names
-                    df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
-
-                    # Try to find required columns flexibly
-                    col_map = {}
-
-                    # Find date column
-                    for col in df.columns:
-                        if 'date' in col:
-                            col_map['date'] = col
-                            break
-
-                    # Find amount column
-                    for col in df.columns:
-                        if 'amount' in col or 'price' in col or 'value' in col:
-                            col_map['amount'] = col
-                            break
-
-                    # Find category column
-                    for col in df.columns:
-                        if 'category' in col or 'type' in col or 'cat' in col:
-                            col_map['category'] = col
-                            break
-
-                    # Find description column
-                    for col in df.columns:
-                        if 'description' in col or 'desc' in col or 'note' in col or 'detail' in col:
-                            col_map['description'] = col
-                            break
-
-                    # Find income/expense type column
-                    for col in df.columns:
-                        if 'income' in col or 'expense' in col or 'transaction' in col or 'type' in col:
-                            col_map['type'] = col
-                            break
-
-                    if 'amount' not in col_map:
-                        error = "Could not find an amount column. Please ensure your file has a column named 'amount', 'price', or 'value'."
-                    else:
-                        # Clean data
-                        amount_col = col_map['amount']
-                        df[amount_col] = pd.to_numeric(
-                            df[amount_col].astype(str).str.replace('[₹$,]', '', regex=True),
-                            errors='coerce'
-                        )
-                        df = df.dropna(subset=[amount_col])
-                        df = df[df[amount_col] > 0]
-
-                        # Store to database
-                        conn = get_db()
-                        conn.execute(
-                            "DELETE FROM imported_data WHERE user_id=?",
-                            (user_id,))
-
-                        rows_imported = 0
-                        for _, row in df.iterrows():
-                            date = str(row.get(col_map.get('date', ''), '2026-01-01'))[:10]
-                            category = str(row.get(col_map.get('category', ''), 'Others'))
-                            description = str(row.get(col_map.get('description', ''), ''))
-                            amount = float(row[amount_col])
-                            trans_type = str(row.get(col_map.get('type', ''), 'Expense'))
-
-                            # Determine if income or expense
-                            if 'income' in trans_type.lower() or 'credit' in trans_type.lower() or 'salary' in trans_type.lower():
-                                trans_type = 'Income'
-                            else:
-                                trans_type = 'Expense'
-
-                            conn.execute(
-                                "INSERT INTO imported_data (user_id, date, category, description, amount, type, source_file) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                                (user_id, date, category, description, amount, trans_type, secure_filename(file.filename)))
-                            rows_imported += 1
-
-                        conn.commit()
-
-                        # Get stats
-                        total_income = df[df[col_map.get('type', '')] .astype(str).str.lower().str.contains('income|credit|salary', na=False)][amount_col].sum() if col_map.get('type') else 0
-                        total_expense = df[amount_col].sum() - total_income if total_income > 0 else df[amount_col].sum()
-
-                        stats = {
-                            'rows': rows_imported,
-                            'total_income': round(total_income, 2),
-                            'total_expense': round(total_expense, 2),
-                            'savings': round(total_income - total_expense, 2),
-                            'columns_found': list(col_map.keys())
-                        }
-
-                        message = f"Successfully imported {rows_imported} records!"
-                        preview_data = df.head(5).to_dict('records')
-                        conn.close()
-
-                except Exception as e:
-                    error = f"Error processing file: {str(e)}"
-
-    return render_template('import_data.html',
-                           message=message,
-                           error=error,
-                           preview_data=preview_data,
-                           stats=stats)
-
-
+    if not PANDAS_AVAILABLE:
+        error = "Pandas library not available on server."
+        return render_template('import_data.html',
+                               message=None, error=error,
+                               preview_data=[], stats={})
 @app.route('/import_analysis')
 def import_analysis():
     if 'user_id' not in session:
