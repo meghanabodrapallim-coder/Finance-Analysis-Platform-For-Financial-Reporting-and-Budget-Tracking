@@ -3052,13 +3052,128 @@ def import_data():
     preview_data = []
     stats = {}
 
-   if not PANDAS_AVAILABLE:
-    error = "Data import feature requires pandas. Please contact admin."
+    if not PANDAS_AVAILABLE:
+        error = "Data import feature not available."
+        return render_template('import_data.html',
+                               message=None,
+                               error=error,
+                               preview_data=[],
+                               stats={})
+
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            error = "No file selected!"
+        else:
+            file = request.files['file']
+            if file.filename == '':
+                error = "No file selected!"
+            elif not allowed_file(file.filename):
+                error = "Only CSV, XLSX and XLS files allowed!"
+            else:
+                try:
+                    if file.filename.endswith('.csv'):
+                        df = pd.read_csv(file)
+                    else:
+                        df = pd.read_excel(file)
+
+                    df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
+
+                    col_map = {}
+                    for col in df.columns:
+                        if 'date' in col:
+                            col_map['date'] = col
+                            break
+                    for col in df.columns:
+                        if 'amount' in col or 'price' in col or 'value' in col:
+                            col_map['amount'] = col
+                            break
+                    for col in df.columns:
+                        if 'category' in col or 'cat' in col:
+                            col_map['category'] = col
+                            break
+                    for col in df.columns:
+                        if 'description' in col or 'desc' in col or 'note' in col:
+                            col_map['description'] = col
+                            break
+                    for col in df.columns:
+                        if 'type' in col or 'income' in col or 'expense' in col:
+                            col_map['type'] = col
+                            break
+
+                    if 'amount' not in col_map:
+                        error = "Could not find amount column in your file."
+                    else:
+                        amount_col = col_map['amount']
+                        df[amount_col] = pd.to_numeric(
+                            df[amount_col].astype(str).str.replace(
+                                '[₹$,]', '', regex=True),
+                            errors='coerce')
+                        df = df.dropna(subset=[amount_col])
+                        df = df[df[amount_col] > 0]
+
+                        conn = get_db()
+                        conn.execute(
+                            "DELETE FROM imported_data WHERE user_id=?",
+                            (user_id,))
+
+                        rows_imported = 0
+                        for _, row in df.iterrows():
+                            date = str(row.get(
+                                col_map.get('date', ''),
+                                '2026-01-01'))[:10]
+                            category = str(row.get(
+                                col_map.get('category', ''),
+                                'Others'))
+                            description = str(row.get(
+                                col_map.get('description', ''), ''))
+                            amount = float(row[amount_col])
+                            trans_type = str(row.get(
+                                col_map.get('type', ''), 'Expense'))
+
+                            if any(x in trans_type.lower() for x in
+                                   ['income', 'credit', 'salary']):
+                                trans_type = 'Income'
+                            else:
+                                trans_type = 'Expense'
+
+                            conn.execute(
+                                "INSERT INTO imported_data (user_id, date, category, description, amount, type, source_file) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                (user_id, date, category,
+                                 description, amount,
+                                 trans_type,
+                                 secure_filename(file.filename)))
+                            rows_imported += 1
+
+                        conn.commit()
+
+                        total_income = sum(
+                            float(row[amount_col])
+                            for _, row in df.iterrows()
+                            if any(x in str(row.get(
+                                col_map.get('type', ''),
+                                '')).lower()
+                                for x in ['income', 'credit', 'salary']))
+
+                        total_expense = float(df[amount_col].sum()) - total_income
+
+                        stats = {
+                            'rows': rows_imported,
+                            'total_income': round(total_income, 2),
+                            'total_expense': round(total_expense, 2),
+                            'savings': round(total_income - total_expense, 2)
+                        }
+
+                        message = f"Successfully imported {rows_imported} records!"
+                        conn.close()
+
+                except Exception as e:
+                    error = f"Error processing file: {str(e)}"
+
     return render_template('import_data.html',
-                           message=None,
+                           message=message,
                            error=error,
-                           preview_data=[],
-                           stats={})
+                           preview_data=preview_data,
+                           stats=stats)
 @app.route('/import_analysis')
 def import_analysis():
     if 'user_id' not in session:
