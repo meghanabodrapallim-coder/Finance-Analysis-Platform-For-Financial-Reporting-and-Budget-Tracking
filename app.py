@@ -2,7 +2,11 @@ from flask import send_file
 import csv
 import io
 import os
-import pandas as pd
+try:
+    import pandas as pd
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
 from werkzeug.utils import secure_filename
 import calendar
 from openpyxl import Workbook
@@ -3048,11 +3052,13 @@ def import_data():
     preview_data = []
     stats = {}
 
-    if not PANDAS_AVAILABLE:
-        error = "Pandas library not available on server."
-        return render_template('import_data.html',
-                               message=None, error=error,
-                               preview_data=[], stats={})
+   if not PANDAS_AVAILABLE:
+    error = "Data import feature requires pandas. Please contact admin."
+    return render_template('import_data.html',
+                           message=None,
+                           error=error,
+                           preview_data=[],
+                           stats={})
 @app.route('/import_analysis')
 def import_analysis():
     if 'user_id' not in session:
