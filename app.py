@@ -10,7 +10,11 @@ except ImportError:
 from werkzeug.utils import secure_filename
 import calendar
 from openpyxl import Workbook
-from docx import Document
+try:
+    from docx import Document
+    DOCX_AVAILABLE = True
+except ImportError:
+    DOCX_AVAILABLE = False
 from docx.shared import Pt, RGBColor
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
